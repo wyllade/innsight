@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Innsight — Hotel Discovery</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="api.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --surface3: #24243a;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18);
+    --text: #f0eee8;
+    --muted: #888897;
+    --accent: #c9a96e;
+    --accent2: #7c6ff7;
+    --accent3: #2dd4a0;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--accent); cursor: pointer; }
+  .logo span { color: var(--text); }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; cursor: pointer; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-btn {
+    background: var(--accent); color: #0a0a0f;
+    border: none; padding: 8px 20px; border-radius: 40px;
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .nav-btn:hover { opacity: 0.85; }
+
+  /* ── PAGES ── */
+  .page { display: none; animation: fadeIn 0.35s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: var(--surface3); border: 1px solid var(--border-hover);
+    border-radius: 40px; padding: 10px 24px; font-size: 14px;
+    color: var(--text); z-index: 300; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── LOADING SPINNER ── */
+  .spinner {
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px; color: var(--muted); font-size: 14px; gap: 12px;
+  }
+  .spin { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ══════════════ LANDING ══════════════ */
+  .hero {
+    min-height: calc(100vh - 65px); display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 40px; position: relative; overflow: hidden; text-align: center;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,111,247,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(201,169,110,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(201,169,110,0.1); border: 1px solid rgba(201,169,110,0.25);
+    border-radius: 40px; padding: 6px 16px; font-size: 12px; color: var(--accent);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 28px; font-weight: 500;
+  }
+  .hero h1 {
+    font-family: var(--font-display); font-size: clamp(40px, 6vw, 74px);
+    font-weight: 900; line-height: 1.05; letter-spacing: -0.02em;
+    max-width: 820px; margin-bottom: 20px;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 17px; max-width: 520px; margin-bottom: 48px; font-weight: 300; }
+
+  .search-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px 28px; width: 100%; max-width: 800px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .search-row { display: flex; gap: 12px; align-items: stretch; }
+  .search-field {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 16px; color: var(--text);
+    font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.2s;
+  }
+  .search-field::placeholder { color: var(--muted); }
+  .search-field:focus { border-color: var(--border-hover); }
+  .search-btn {
+    background: var(--accent); color: #0a0a0f; border: none;
+    border-radius: var(--radius-sm); padding: 12px 28px;
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    cursor: pointer; white-space: nowrap; transition: opacity 0.2s;
+  }
+  .search-btn:hover { opacity: 0.85; }
+  .amenity-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 40px; padding: 6px 14px; font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all 0.18s; user-select: none;
+  }
+  .pill:hover { border-color: var(--border-hover); color: var(--text); }
+  .pill.active { background: rgba(201,169,110,0.12); border-color: rgba(201,169,110,0.4); color: var(--accent); }
+
+  .stats-strip { display: flex; gap: 48px; margin-top: 52px; }
+  .stat { text-align: center; }
+  .stat-num { font-family: var(--font-display); font-size: 28px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ══════════════ RESULTS ══════════════ */
+  .results-layout { display: flex; min-height: calc(100vh - 65px); }
+  .sidebar {
+    width: 280px; flex-shrink: 0; padding: 28px 24px;
+    border-right: 1px solid var(--border); background: var(--surface);
+    position: sticky; top: 65px; height: calc(100vh - 65px); overflow-y: auto;
+  }
+  .sidebar h3 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; font-weight: 500; }
+  .filter-section { margin-bottom: 28px; }
+  .filter-check { display: flex; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; color: var(--muted); font-size: 14px; transition: color 0.15s; }
+  .filter-check:hover { color: var(--text); }
+  .filter-check input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+  .price-range { width: 100%; accent-color: var(--accent); margin-top: 8px; }
+  .price-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .star-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+  .star-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px; font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .star-btn:hover, .star-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,0.08); }
+  .apply-btn {
+    width: 100%; background: var(--accent); color: #0a0a0f;
+    border: none; border-radius: var(--radius-sm); padding: 10px;
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    cursor: pointer; margin-top: 8px; transition: opacity 0.2s;
+  }
+  .apply-btn:hover { opacity: 0.85; }
+
+  .results-main { flex: 1; padding: 28px 32px; }
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .results-header h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
+  .results-count { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .sort-select {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 14px; color: var(--text);
+    font-family: var(--font-body); font-size: 13px; outline: none; cursor: pointer;
+  }
+  .hotel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+  .hotel-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .hotel-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
+  .hotel-img-placeholder {
+    width: 100%; height: 180px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 52px; position: relative;
+  }
+  .hotel-badge {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(10,10,15,0.85); border: 1px solid var(--border);
+    border-radius: 40px; padding: 3px 10px; font-size: 11px; color: var(--accent3);
+    font-weight: 500; backdrop-filter: blur(6px);
+  }
+  .hotel-body { padding: 16px; }
+  .hotel-name { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .hotel-location { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .hotel-amenities { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .hotel-amenity { font-size: 11px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; color: var(--muted); }
+  .hotel-footer { display: flex; justify-content: space-between; align-items: center; }
+  .hotel-price { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .hotel-price span { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .hotel-rating { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--accent); font-weight: 500; }
+
+  /* ══════════════ DETAIL ══════════════ */
+  .detail-wrap { max-width: 960px; margin: 0 auto; padding: 36px 32px 60px; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 40px; padding: 7px 16px; font-size: 13px; color: var(--muted);
+    cursor: pointer; margin-bottom: 28px; transition: color 0.15s, border-color 0.15s;
+    font-family: var(--font-body);
+  }
+  .back-btn:hover { color: var(--text); border-color: var(--border-hover); }
+  .detail-hero {
+    border-radius: 16px; overflow: hidden; margin-bottom: 32px; height: 340px;
+    background: var(--surface3); display: flex; align-items: center; justify-content: center;
+    font-size: 80px; position: relative;
+  }
+  .detail-grid { display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; }
+  .detail-name { font-family: var(--font-display); font-size: 36px; font-weight: 900; line-height: 1.1; margin-bottom: 8px; }
+  .detail-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .detail-loc { font-size: 14px; color: var(--muted); }
+  .detail-rating-big {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(201,169,110,0.1); border: 1px solid rgba(201,169,110,0.25);
+    border-radius: 40px; padding: 4px 14px; font-size: 13px; color: var(--accent); font-weight: 500;
+  }
+  .detail-desc { color: var(--muted); font-size: 15px; line-height: 1.75; margin-bottom: 28px; font-weight: 300; }
+  .detail-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 14px; font-weight: 500; }
+  .amenity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
+  .amenity-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px;
+    display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted);
+  }
+
+  /* Booking card */
+  .booking-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; position: sticky; top: 80px;
+  }
+  .booking-price { font-size: 32px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+  .booking-price span { font-size: 14px; font-weight: 400; color: var(--muted); font-family: var(--font-body); }
+  .booking-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .date-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text);
+    font-family: var(--font-body); font-size: 13px; outline: none;
+    margin-bottom: 10px; transition: border-color 0.2s;
+  }
+  .date-input:focus { border-color: var(--border-hover); }
+  .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .book-btn {
+    width: 100%; background: var(--accent); color: #0a0a0f; border: none;
+    border-radius: var(--radius-sm); padding: 14px; font-family: var(--font-body);
+    font-size: 15px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; margin-top: 6px;
+  }
+  .book-btn:hover { opacity: 0.85; }
+  .book-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .book-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+  /* Guest form */
+  .guest-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 14px; color: var(--text);
+    font-family: var(--font-body); font-size: 13px; outline: none;
+    margin-bottom: 8px; transition: border-color 0.2s;
+  }
+  .guest-input::placeholder { color: var(--muted); }
+  .guest-input:focus { border-color: var(--border-hover); }
+
+  /* Confirm modal */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .confirm-overlay.show { display: flex; }
+  .confirm-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 36px 32px; max-width: 420px; width: 90%;
+    text-align: center; animation: fadeIn 0.3s ease;
+  }
+  .confirm-icon { font-size: 48px; margin-bottom: 16px; }
+  .confirm-box h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-box p { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+  .confirm-detail { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px; margin: 16px 0; text-align: left; font-size: 13px; }
+  .confirm-detail div { display: flex; justify-content: space-between; padding: 4px 0; }
+  .confirm-detail span:first-child { color: var(--muted); }
+  .confirm-detail span:last-child { font-weight: 500; color: var(--accent); }
+  .confirm-close {
+    background: var(--accent); color: #0a0a0f; border: none;
+    border-radius: 40px; padding: 10px 28px; font-family: var(--font-body);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+
+  /* Error state */
+  .error-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .error-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="showPage('landing')">Inn<span>sight</span></div>
+  <div class="nav-links">
+    <a onclick="showPage('landing')">Discover</a>
+    <a onclick="goToResults()">Browse Hotels</a>
+  </div>
+  <button class="nav-btn" onclick="goToResults()">Search Hotels</button>
+</nav>
+
+<!-- ══════════════ LANDING ══════════════ -->
+<div id="page-landing" class="page active">
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-badge">✦ Smarter Hotel Discovery</div>
+    <h1>Find hotels by the <em>life</em> you want to live</h1>
+    <p>Search by amenities, not just addresses. Rooftop pool? Gym at 6am? Breakfast included? We've got you.</p>
+
+    <div class="search-card">
+      <div class="search-row">
+        <input class="search-field" id="hero-location" placeholder="🏙  City or destination..." style="flex:2" />
+        <input class="search-field" id="hero-checkin" type="date" />
+        <input class="search-field" id="hero-checkout" type="date" />
+        <button class="search-btn" onclick="heroSearch()">Search →</button>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">Popular amenities</div>
+        <div class="amenity-pills" id="hero-pills"></div>
+      </div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-num" id="stat-hotels">—</div><div class="stat-label">Hotels Listed</div></div>
+      <div class="stat"><div class="stat-num">48</div><div class="stat-label">Countries</div></div>
+      <div class="stat"><div class="stat-num" id="stat-amenities">—</div><div class="stat-label">Amenity Filters</div></div>
+      <div class="stat"><div class="stat-num">4.9★</div><div class="stat-label">User Rating</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ RESULTS ══════════════ -->
+<div id="page-results" class="page">
+  <div class="results-layout">
+    <aside class="sidebar">
+      <div class="filter-section">
+        <h3>Price per night</h3>
+        <input type="range" class="price-range" min="0" max="1000" value="1000" id="price-slider" step="10" oninput="updatePrice(this.value)" />
+        <div class="price-labels"><span>$0</span><span id="price-val">Any price</span></div>
+      </div>
+      <div class="filter-section">
+        <h3>Star rating</h3>
+        <div class="star-filter">
+          <button class="star-btn" data-stars="3" onclick="toggleStar(this)">3+ ★</button>
+          <button class="star-btn" data-stars="4" onclick="toggleStar(this)">4+ ★</button>
+          <button class="star-btn" data-stars="5" onclick="toggleStar(this)">5 ★</button>
+        </div>
+      </div>
+      <div class="filter-section">
+        <h3>Property type</h3>
+        <label class="filter-check"><input type="checkbox" value="Hotel" class="type-check" /> Hotel</label>
+        <label class="filter-check"><input type="checkbox" value="Resort" class="type-check" /> Resort</label>
+        <label class="filter-check"><input type="checkbox" value="Boutique" class="type-check" /> Boutique</label>
+        <label class="filter-check"><input type="checkbox" value="Hostel" class="type-check" /> Hostel</label>
+      </div>
+      <div class="filter-section">
+        <h3>Amenities</h3>
+        <div id="sidebar-amenity-filters"></div>
+      </div>
+      <button class="apply-btn" onclick="applyFilters()">Apply Filters</button>
+    </aside>
+
+    <main class="results-main">
+      <div class="results-header">
+        <div>
+          <h2 id="results-title">All Hotels</h2>
+          <div class="results-count" id="results-count">Loading...</div>
+        </div>
+        <select class="sort-select" id="sort-select" onchange="applyFilters()">
+          <option value="">Best match</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="rating">Top Rated</option>
+          <option value="reviews">Most Reviewed</option>
+        </select>
+      </div>
+      <div id="hotel-grid" class="hotel-grid"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════ DETAIL ══════════════ -->
+<div id="page-detail" class="page">
+  <div class="detail-wrap">
+    <button class="back-btn" onclick="showPage('results')">← Back to results</button>
+    <div class="detail-hero" id="detail-hero">🏨</div>
+    <div class="detail-grid">
+      <div class="detail-main">
+        <div class="detail-name" id="detail-name"></div>
+        <div class="detail-meta">
+          <span class="detail-loc" id="detail-loc"></span>
+          <span class="detail-rating-big" id="detail-rating"></span>
+          <span id="detail-type-badge" style="background:var(--surface2);border:1px solid var(--border);border-radius:40px;padding:4px 12px;font-size:12px;color:var(--muted);"></span>
+        </div>
+        <p class="detail-desc" id="detail-desc"></p>
+        <div class="detail-section-title">Amenities &amp; features</div>
+        <div class="amenity-grid" id="detail-amenities"></div>
+        <div class="detail-section-title">Policies</div>
+        <div id="detail-policies" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <div>
+        <div class="booking-card">
+          <div class="booking-price" id="booking-price">$0 <span>/ night</span></div>
+          <hr class="booking-divider" />
+          <div class="date-row">
+            <input class="date-input" type="date" id="book-checkin" placeholder="Check-in" />
+            <input class="date-input" type="date" id="book-checkout" placeholder="Check-out" />
+          </div>
+          <input class="guest-input" id="book-name" placeholder="Full name" />
+          <input class="guest-input" id="book-email" type="email" placeholder="Email address" />
+          <input class="guest-input" id="book-guests" type="number" min="1" max="10" value="1" placeholder="Guests" />
+          <button class="book-btn" id="book-btn" onclick="submitBooking()">Reserve Now</button>
+          <div class="book-note">No charge yet — confirm on next step</div>
+          <hr class="booking-divider" />
+          <div style="font-size:13px;display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="color:var(--muted)">Rate</span>
+            <span id="calc-rate">$0 / night</span>
+          </div>
+          <div style="font-size:13px;display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="color:var(--muted)">Taxes (16%)</span>
+            <span id="calc-tax">—</span>
+          </div>
+          <hr class="booking-divider" />
+          <div style="display:flex;justify-content:space-between;font-weight:500;">
+            <span>Total</span>
+            <span id="calc-total" style="color:var(--accent)">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🎉</div>
+    <h2>Booking Confirmed!</h2>
+    <p>Your reservation is locked in. Details below.</p>
+    <div class="confirm-detail" id="confirm-detail"></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">A confirmation has been sent to your email.</p>
+    <button class="confirm-close" onclick="document.getElementById('confirm-overlay').classList.remove('show')">Done</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ───────────────────────────────────────────────────
+let currentHotel = null;
+let allAmenities = [];
+let selectedStars = null;
+let selectedHeroAmenities = new Set();
+
+const AMENITY_ICONS = {
+  'Swimming Pool':'🏊','Free WiFi':'📶','Gym':'💪','Breakfast':'🍳',
+  'Spa':'🧖','Parking':'🅿️','Restaurant':'🍽️','Bar':'🍸',
+  'Airport Shuttle':'✈️','Pet Friendly':'🐾','Room Service':'🛎️','Conference':'📊',
+};
+function amenityIcon(a) { return AMENITY_ICONS[a] || '✓'; }
+
+const GRADIENTS = [
+  'linear-gradient(135deg,#1a1635 0%,#2d1f4a 100%)',
+  'linear-gradient(135deg,#0f2a1a 0%,#1a3d2b 100%)',
+  'linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)',
+  'linear-gradient(135deg,#2a1a0f 0%,#3d2b1a 100%)',
+  'linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%)',
+  'linear-gradient(135deg,#1a1228 0%,#2a1a3d 100%)',
+  'linear-gradient(135deg,#0d1f2a 0%,#1a3040 100%)',
+  'linear-gradient(135deg,#1f1a0d 0%,#302a1a 100%)',
+];
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Pages ────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Init ─────────────────────────────────────────────────────
+async function init() {
+  try {
+    const [amenitiesRes, hotelsRes] = await Promise.all([
+      API.getAmenities(),
+      API.getHotels(),
+    ]);
+    allAmenities = amenitiesRes;
+    renderHeroPills();
+    renderSidebarAmenityFilters();
+    document.getElementById('stat-hotels').textContent = hotelsRes.total + '+';
+    document.getElementById('stat-amenities').textContent = allAmenities.length + '+';
+  } catch (e) {
+    // API not running — show graceful message
+    console.warn('API unavailable, using offline mode:', e.message);
+    renderHeroPills(['Swimming Pool','Free WiFi','Gym','Breakfast','Spa','Parking','Restaurant','Bar']);
+    document.getElementById('stat-hotels').textContent = '12,400+';
+    document.getElementById('stat-amenities').textContent = '200+';
+  }
+}
+
+function renderHeroPills(amenities) {
+  const list = amenities || allAmenities.slice(0, 8);
+  const c = document.getElementById('hero-pills');
+  c.innerHTML = '';
+  list.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'pill';
+    b.textContent = amenityIcon(a) + ' ' + a;
+    b.onclick = () => {
+      b.classList.toggle('active');
+      if (b.classList.contains('active')) selectedHeroAmenities.add(a);
+      else selectedHeroAmenities.delete(a);
+    };
+    c.appendChild(b);
+  });
+}
+
+function renderSidebarAmenityFilters() {
+  const c = document.getElementById('sidebar-amenity-filters');
+  c.innerHTML = '';
+  allAmenities.forEach(a => {
+    const label = document.createElement('label');
+    label.className = 'filter-check';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = a; cb.className = 'amenity-check';
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' ' + amenityIcon(a) + ' ' + a));
+    c.appendChild(label);
+  });
+}
+
+// ── Search/Filter ────────────────────────────────────────────
+function heroSearch() {
+  const city = document.getElementById('hero-location').value;
+  if (city) document.getElementById('results-title').textContent = city + ' Hotels';
+  showPage('results');
+  loadHotels({ city, amenities: [...selectedHeroAmenities].join(',') });
+}
+
+function goToResults() {
+  showPage('results');
+  loadHotels();
+}
+
+function updatePrice(val) {
+  document.getElementById('price-val').textContent = val >= 1000 ? 'Any price' : 'Up to $' + val;
+}
+
+function toggleStar(btn) {
+  const stars = btn.dataset.stars;
+  if (selectedStars === stars) {
+    selectedStars = null;
+    btn.classList.remove('active');
+  } else {
+    selectedStars = stars;
+    document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+}
+
+function applyFilters() {
+  const maxPrice = document.getElementById('price-slider').value;
+  const checkedAmenities = [...document.querySelectorAll('.amenity-check:checked')].map(c => c.value);
+  const sort = document.getElementById('sort-select').value;
+  const params = {
+    maxPrice: maxPrice < 1000 ? maxPrice : '',
+    amenities: checkedAmenities.join(','),
+    stars: selectedStars || '',
+    sort,
+  };
+  loadHotels(params);
+}
+
+async function loadHotels(params = {}) {
+  const grid = document.getElementById('hotel-grid');
+  grid.innerHTML = '<div class="spinner"><div class="spin"></div> Loading hotels...</div>';
+  document.getElementById('results-count').textContent = 'Searching...';
+
+  try {
+    const data = await API.getHotels(params);
+    renderHotelGrid(data.results);
+    document.getElementById('results-count').textContent =
+      `Showing ${data.total} propert${data.total === 1 ? 'y' : 'ies'}`;
+    if (params.city) document.getElementById('results-title').textContent = params.city + ' Hotels';
+  } catch (e) {
+    grid.innerHTML = `<div class="error-state"><h3>Could not load hotels</h3><p>Make sure the backend server is running at <code>http://localhost:3001</code></p><p style="margin-top:8px;font-size:12px">${e.message}</p></div>`;
+    document.getElementById('results-count').textContent = '0 results';
+  }
+}
+
+function renderHotelGrid(hotels) {
+  const grid = document.getElementById('hotel-grid');
+  if (!hotels.length) {
+    grid.innerHTML = '<div class="error-state"><h3>No hotels found</h3><p>Try adjusting your filters or search terms.</p></div>';
+    return;
+  }
+  grid.innerHTML = '';
+  hotels.forEach((h, i) => {
+    const card = document.createElement('div');
+    card.className = 'hotel-card';
+    const tags = (h.amenities || []).slice(0, 3).map(a =>
+      `<span class="hotel-amenity">${amenityIcon(a)} ${a}</span>`
+    ).join('');
+    const badge = h.badge ? `<span class="hotel-badge">${h.badge}</span>` : '';
+    card.innerHTML = `
+      <div class="hotel-img-placeholder" style="background:${GRADIENTS[i % GRADIENTS.length]}">
+        <span>${h.emoji || '🏨'}</span>${badge}
+      </div>
+      <div class="hotel-body">
+        <div class="hotel-name">${h.name}</div>
+        <div class="hotel-location">📍 ${h.location}</div>
+        <div class="hotel-amenities">${tags}</div>
+        <div class="hotel-footer">
+          <div class="hotel-price">$${h.pricePerNight} <span>/ night</span></div>
+          <div class="hotel-rating">★ ${h.rating} <span style="color:var(--muted);font-weight:400">(${h.reviews.toLocaleString()})</span></div>
+        </div>
+      </div>`;
+    card.onclick = () => openHotelDetail(h.id);
+    grid.appendChild(card);
+  });
+}
+
+// ── Detail ───────────────────────────────────────────────────
+async function openHotelDetail(id) {
+  showPage('detail');
+  document.getElementById('detail-name').textContent = 'Loading...';
+  document.getElementById('detail-amenities').innerHTML = '';
+
+  try {
+    const hotel = await API.getHotel(id);
+    currentHotel = hotel;
+    populateDetail(hotel);
+  } catch (e) {
+    showToast('Failed to load hotel details');
+  }
+}
+
+function populateDetail(h) {
+  const idx = Math.abs(h.id.charCodeAt(1)) % GRADIENTS.length;
+  const heroEl = document.getElementById('detail-hero');
+  heroEl.innerHTML = `<span>${h.emoji || '🏨'}</span>`;
+  heroEl.style.background = GRADIENTS[idx];
+
+  document.getElementById('detail-name').textContent = h.name;
+  document.getElementById('detail-loc').textContent = '📍 ' + h.location;
+  document.getElementById('detail-rating').textContent = `★ ${h.rating}  (${h.reviews.toLocaleString()} reviews)`;
+  document.getElementById('detail-type-badge').textContent = h.type;
+  document.getElementById('detail-desc').textContent = h.description;
+  document.getElementById('booking-price').innerHTML = `$${h.pricePerNight} <span>/ night</span>`;
+  document.getElementById('calc-rate').textContent = `$${h.pricePerNight} / night`;
+
+  // Amenities
+  const ag = document.getElementById('detail-amenities');
+  ag.innerHTML = '';
+  (h.amenities || []).forEach(a => {
+    const item = document.createElement('div');
+    item.className = 'amenity-item';
+    item.innerHTML = `<span style="font-size:18px">${amenityIcon(a)}</span> ${a}`;
+    ag.appendChild(item);
+  });
+
+  // Policies
+  document.getElementById('detail-policies').innerHTML = `
+    <div style="font-size:13px;color:var(--muted)">🕐 Check-in: ${h.checkIn || '14:00'} — Check-out: ${h.checkOut || '12:00'}</div>
+    <div style="font-size:13px;color:var(--muted)">${h.petsAllowed ? '🐾 Pets welcome' : '🚫 No pets'}</div>
+    <div style="font-size:13px;color:var(--muted)">🚭 Non-smoking property</div>
+    <div style="font-size:13px;color:var(--muted)">💳 ${(h.payments || []).join(', ')}</div>
+  `;
+
+  // Wire up date inputs to update price calc
+  document.getElementById('book-checkin').oninput = updateCalc;
+  document.getElementById('book-checkout').oninput = updateCalc;
+  updateCalc();
+}
+
+function updateCalc() {
+  if (!currentHotel) return;
+  const inVal = document.getElementById('book-checkin').value;
+  const outVal = document.getElementById('book-checkout').value;
+  if (!inVal || !outVal) {
+    document.getElementById('calc-tax').textContent = '—';
+    document.getElementById('calc-total').textContent = '—';
+    return;
+  }
+  const nights = Math.max(1, Math.ceil((new Date(outVal) - new Date(inVal)) / 86400000));
+  const sub = nights * currentHotel.pricePerNight;
+  const tax = Math.round(sub * 0.16);
+  document.getElementById('calc-tax').textContent = '$' + tax;
+  document.getElementById('calc-total').textContent = '$' + (sub + tax) + ` (${nights} night${nights > 1 ? 's' : ''})`;
+}
+
+// ── Booking ──────────────────────────────────────────────────
+async function submitBooking() {
+  if (!currentHotel) return;
+  const checkIn = document.getElementById('book-checkin').value;
+  const checkOut = document.getElementById('book-checkout').value;
+  const guestName = document.getElementById('book-name').value.trim();
+  const guestEmail = document.getElementById('book-email').value.trim();
+  const guests = document.getElementById('book-guests').value;
+
+  if (!checkIn || !checkOut || !guestName || !guestEmail) {
+    showToast('Please fill in all fields');
+    return;
+  }
+
+  const btn = document.getElementById('book-btn');
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+
+  try {
+    const res = await API.createBooking({
+      hotelId: currentHotel.id,
+      checkIn, checkOut, guests: Number(guests), guestName, guestEmail,
+    });
+
+    const b = res.booking;
+    document.getElementById('confirm-detail').innerHTML = `
+      <div><span>Hotel</span><span>${b.hotelName}</span></div>
+      <div><span>Booking ID</span><span style="font-size:11px">${b.id.split('-')[0].toUpperCase()}</span></div>
+      <div><span>Check-in</span><span>${b.checkIn}</span></div>
+      <div><span>Check-out</span><span>${b.checkOut}</span></div>
+      <div><span>Nights</span><span>${b.nights}</span></div>
+      <div><span>Guests</span><span>${b.guests}</span></div>
+      <div><span>Total</span><span>$${b.total}</span></div>
+    `;
+    document.getElementById('confirm-overlay').classList.add('show');
+  } catch (e) {
+    showToast('Booking failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Reserve Now';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "innsight-frontend",
+  "version": "1.0.0",
+  "description": "Innsight Hotel Discovery Frontend",
+  "scripts": {
+    "dev": "npx serve public -p 3000",
+    "start": "npx serve public -p 3000"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
