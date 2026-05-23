@@ -644,8 +644,6 @@ const reviews = [
     text: "Perfect for a quiet beach holiday. Snorkelling gear and bikes included. The coral garden is beautiful.",
     date: "2026-03-10",
   },
-];
-
   {
     id: "r019", hotelId: "h009", author: "Yuki T.", rating: 5,
     text: "The Capsule Pod is an engineering marvel — so much comfort in such a compact space. The rooftop bar has incredible views of Shibuya Crossing.",
