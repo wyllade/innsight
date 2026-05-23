@@ -9,16 +9,24 @@ def best_match_score(hotel: dict) -> float:
     return hotel["rating"] * math.log10(hotel["reviews"] + 1)
 
 
+def is_date_overlapping(check_in_a, check_out_a, check_in_b, check_out_b):
+    return check_in_a < check_out_b and check_out_a > check_in_b
+
+
 def filter_hotels(
     hotels: list[dict],
     q: str = "",
     city: str = "",
+    country: str = "",
     amenities: str = "",
     min_price: str = "",
     max_price: str = "",
     stars: str = "",
     prop_type: str = "",
     sort: str = "",
+    check_in: str = "",
+    check_out: str = "",
+    bookings: list[dict] = None,
 ) -> list[dict]:
     results = list(hotels)
 
@@ -37,6 +45,10 @@ def filter_hotels(
         lcity = city.lower()
         results = [h for h in results if lcity in h["city"].lower()]
 
+    if country:
+        lc = country.lower()
+        results = [h for h in results if lc in h["country"].lower()]
+
     if amenities:
         requested = [a.strip().lower() for a in amenities.split(",")]
         results = [
@@ -49,7 +61,6 @@ def filter_hotels(
 
     if min_price:
         results = [h for h in results if h["pricePerNight"] >= int(min_price)]
-
     if max_price:
         results = [h for h in results if h["pricePerNight"] <= int(max_price)]
 
@@ -58,8 +69,32 @@ def filter_hotels(
         results = [h for h in results if h["stars"] >= min_stars]
 
     if prop_type:
-        ltype = prop_type.lower()
-        results = [h for h in results if h["type"].lower() == ltype]
+        types = [t.strip().lower() for t in prop_type.split(",")]
+        results = [h for h in results if h["type"].lower() in types]
+
+    # Availability check
+    if check_in and check_out and bookings is not None:
+        try:
+            ci = datetime.strptime(check_in, "%Y-%m-%d")
+            co = datetime.strptime(check_out, "%Y-%m-%d")
+            if co > ci:
+                results = [
+                    h
+                    for h in results
+                    if not any(
+                        b["hotelId"] == h["id"]
+                        and b["status"] != "cancelled"
+                        and is_date_overlapping(
+                            datetime.strptime(b["checkIn"], "%Y-%m-%d"),
+                            datetime.strptime(b["checkOut"], "%Y-%m-%d"),
+                            ci,
+                            co,
+                        )
+                        for b in bookings
+                    )
+                ]
+        except ValueError:
+            pass
 
     sort_map = {
         "price_asc": lambda h: h["pricePerNight"],
@@ -76,6 +111,20 @@ def filter_hotels(
     return results
 
 
+def paginate(results: list, page: int = 1, limit: int = 20):
+    total = len(results)
+    total_pages = max(1, (total + limit - 1) // limit)
+    start = (page - 1) * limit
+    paginated = results[start : start + limit]
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "totalPages": total_pages,
+        "results": paginated,
+    }
+
+
 def create_booking_record(
     booking_id: str,
     hotel: dict,
@@ -84,11 +133,14 @@ def create_booking_record(
     guests: int,
     guest_name: str,
     guest_email: str,
+    room_type: str = None,
+    price_per_night: int = None,
 ) -> dict:
     in_date = datetime.strptime(check_in, "%Y-%m-%d")
     out_date = datetime.strptime(check_out, "%Y-%m-%d")
     nights = max(1, (out_date - in_date).days)
-    subtotal = nights * hotel["pricePerNight"]
+    ppn = price_per_night or hotel["pricePerNight"]
+    subtotal = nights * ppn
     taxes = round(subtotal * 0.16)
     total = subtotal + taxes
 
@@ -103,10 +155,12 @@ def create_booking_record(
         "guests": guests,
         "guestName": guest_name,
         "guestEmail": guest_email,
-        "pricePerNight": hotel["pricePerNight"],
+        "roomType": room_type,
+        "pricePerNight": ppn,
         "subtotal": subtotal,
         "taxes": taxes,
         "total": total,
         "status": "confirmed",
-        "createdAt": datetime.utcnow().isoformat() + "Z",
+        "cancellationPolicy": hotel.get("cancellationPolicy", "non_refundable"),
+        "createdAt": datetime.utcnow().isoformat(),
     }

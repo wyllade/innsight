@@ -10,20 +10,24 @@ export default function Results() {
 
   const [hotels, setHotels] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [allAmenities, setAllAmenities] = useState([]);
   const [maxPriceLimit, setMaxPriceLimit] = useState(1000);
 
-  // Derive filter state from URL params
   const city = searchParams.get("city") || "";
   const q = searchParams.get("q") || "";
   const sort = searchParams.get("sort") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
   const stars = searchParams.get("stars") || "";
   const typeParam = searchParams.get("type") || "";
+  const checkin = searchParams.get("checkin") || "";
+  const checkout = searchParams.get("checkout") || "";
   const selectedAmenities = searchParams.get("amenities")?.split(",").filter(Boolean) || [];
+  const page = parseInt(searchParams.get("page")) || 1;
 
+  // Get highest price from data to set slider max
   useEffect(() => {
     async function loadAmenities() {
       try {
@@ -48,12 +52,16 @@ export default function Results() {
       if (stars) params.stars = stars;
       if (typeParam) params.type = typeParam;
       if (selectedAmenities.length) params.amenities = selectedAmenities.join(",");
+      if (checkin) params.checkIn = checkin;
+      if (checkout) params.checkOut = checkout;
+      params.page = page;
+      params.limit = 20;
 
       const data = await API.getHotels(params);
       setHotels(data.results);
       setTotal(data.total);
+      setTotalPages(data.totalPages || 1);
 
-      // Dynamic max price from data (FIX #5)
       if (data.results.length > 0) {
         const highest = Math.max(...data.results.map((h) => h.pricePerNight));
         setMaxPriceLimit((prev) => Math.max(prev, highest));
@@ -65,7 +73,7 @@ export default function Results() {
     } finally {
       setLoading(false);
     }
-  }, [city, q, sort, maxPrice, stars, typeParam, selectedAmenities.join(","), maxPriceLimit]);
+  }, [city, q, sort, maxPrice, stars, typeParam, selectedAmenities.join(","), checkin, checkout, page, maxPriceLimit]);
 
   useEffect(() => {
     fetchHotels();
@@ -76,6 +84,15 @@ export default function Results() {
       const next = new URLSearchParams(prev);
       if (value) next.set(key, value);
       else next.delete(key);
+      if (key !== "page") next.delete("page");
+      return next;
+    });
+  }
+
+  function goToPage(p) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("page", String(p));
       return next;
     });
   }
@@ -85,19 +102,6 @@ export default function Results() {
     if (current.has(amenity)) current.delete(amenity);
     else current.add(amenity);
     updateParam("amenities", [...current].join(","));
-  }
-
-  function toggleType(type) {
-    const current = new Set(typeParam ? typeParam.split(",") : []);
-    if (current.has(type)) current.delete(type);
-    else current.add(type);
-    updateParam("type", [...current].join(","));
-  }
-
-  function handleApplyFilters() {
-    // All state already in URL params via individual handlers,
-    // but we re-fetch explicitly
-    fetchHotels();
   }
 
   return (
@@ -145,7 +149,12 @@ export default function Results() {
               <input
                 type="checkbox"
                 checked={typeParam.includes(t)}
-                onChange={() => toggleType(t)}
+                onChange={() => {
+                  const current = new Set(typeParam ? typeParam.split(",") : []);
+                  if (current.has(t)) current.delete(t);
+                  else current.add(t);
+                  updateParam("type", [...current].join(","));
+                }}
               />
               {" "}{t}
             </label>
@@ -165,16 +174,12 @@ export default function Results() {
             </label>
           ))}
         </div>
-
-        <button className="apply-btn" onClick={handleApplyFilters}>
-          Apply Filters
-        </button>
       </aside>
 
       <main className="results-main">
         <div className="results-header">
           <div>
-            <h2 id="results-title">{city ? `${city} Hotels` : "All Hotels"}</h2>
+            <h2>{city ? `${city} Hotels` : "All Hotels"}</h2>
             <div className="results-count">
               {loading ? "Searching..." : `Showing ${total} propert${total === 1 ? "y" : "ies"}`}
             </div>
@@ -192,7 +197,17 @@ export default function Results() {
           </select>
         </div>
 
-        <div className="hotel-grid" id="hotel-grid">
+        {checkin && checkout && (
+          <div style={{
+            fontSize: 12, color: "var(--accent)", marginBottom: 16,
+            padding: "6px 12px", background: "rgba(201,169,110,0.08)",
+            borderRadius: "var(--radius-sm)", display: "inline-block",
+          }}>
+            📅 {checkin} → {checkout}
+          </div>
+        )}
+
+        <div className="hotel-grid">
           {loading ? (
             <div style={{ gridColumn: "1 / -1" }}>
               <Spinner text="Loading hotels..." />
@@ -212,6 +227,46 @@ export default function Results() {
             hotels.map((h, i) => <HotelCard key={h.id} hotel={h} index={i} />)
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && !loading && (
+          <div style={{
+            display: "flex", justifyContent: "center", gap: 8, marginTop: 32,
+          }}>
+            <button
+              className="back-btn"
+              disabled={page <= 1}
+              onClick={() => goToPage(page - 1)}
+              style={{ opacity: page <= 1 ? 0.4 : 1 }}
+            >
+              ← Previous
+            </button>
+            {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+              const p = i + 1;
+              return (
+                <button
+                  key={p}
+                  className="star-btn"
+                  style={p === page ? {
+                    background: "rgba(201,169,110,0.12)",
+                    borderColor: "var(--accent)", color: "var(--accent)",
+                  } : {}}
+                  onClick={() => goToPage(p)}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            <button
+              className="back-btn"
+              disabled={page >= totalPages}
+              onClick={() => goToPage(page + 1)}
+              style={{ opacity: page >= totalPages ? 0.4 : 1 }}
+            >
+              Next →
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );

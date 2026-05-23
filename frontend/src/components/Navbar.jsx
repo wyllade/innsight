@@ -9,6 +9,7 @@ export default function Navbar() {
       <div className="nav-links">
         <Link to="/">Discover</Link>
         <Link to="/results">Browse Hotels</Link>
+        <Link to="/bookings">My Bookings</Link>
       </div>
       <Link to="/results" className="nav-btn">Search Hotels</Link>
     </nav>

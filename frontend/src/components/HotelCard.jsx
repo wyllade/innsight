@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const GRADIENTS = [
@@ -25,14 +26,32 @@ export { GRADIENTS };
 
 export default function HotelCard({ hotel, index = 0 }) {
   const navigate = useNavigate();
+  const [imgError, setImgError] = useState(false);
   const tags = (hotel.amenities || []).slice(0, 3).map((a) => (
     <span className="hotel-amenity" key={a}>{amenityIcon(a)} {a}</span>
   ));
 
+  const hasImage = hotel.images && hotel.images[0] && !imgError;
+
   return (
     <div className="hotel-card" onClick={() => navigate(`/hotel/${hotel.id}`)}>
-      <div className="hotel-img-placeholder" style={{ background: GRADIENTS[index % GRADIENTS.length] }}>
-        <span>{hotel.emoji || "🏨"}</span>
+      <div
+        className="hotel-img-placeholder"
+        style={{
+          background: hasImage
+            ? `url(${hotel.images[0]}) center/cover no-repeat`
+            : GRADIENTS[index % GRADIENTS.length],
+        }}
+      >
+        {!hasImage && <span>{hotel.emoji || "🏨"}</span>}
+        {hasImage && (
+          <img
+            src={hotel.images[0]}
+            alt=""
+            style={{ display: "none" }}
+            onError={() => setImgError(true)}
+          />
+        )}
         {hotel.badge && <span className="hotel-badge">{hotel.badge}</span>}
       </div>
       <div className="hotel-body">

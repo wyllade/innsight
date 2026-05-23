@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar.jsx";
 import Landing from "./pages/Landing.jsx";
 import Results from "./pages/Results.jsx";
 import Detail from "./pages/Detail.jsx";
+import MyBookings from "./pages/MyBookings.jsx";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/results" element={<Results />} />
         <Route path="/hotel/:id" element={<Detail />} />
+        <Route path="/bookings" element={<MyBookings />} />
       </Routes>
     </ToastProvider>
   );
