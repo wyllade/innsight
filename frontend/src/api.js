@@ -1,5 +1,4 @@
-// api.js — Innsight API client
-const BASE_URL = window.INNSIGHT_API_URL || "http://localhost:3001";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 async function apiFetch(path, options = {}) {
   const url = `${BASE_URL}${path}`;
@@ -8,12 +7,11 @@ async function apiFetch(path, options = {}) {
     ...options,
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "API error");
+  if (!res.ok) throw new Error(data.error || data.detail || "API error");
   return data;
 }
 
-const API = {
-  // Hotels
+export const API = {
   getHotels: (params = {}) => {
     const qs = new URLSearchParams(
       Object.fromEntries(Object.entries(params).filter(([, v]) => v !== "" && v != null))
@@ -23,12 +21,8 @@ const API = {
   getHotel: (id) => apiFetch(`/api/hotels/${id}`),
   getAmenities: () => apiFetch("/api/hotels/amenities/all"),
   getCities: () => apiFetch("/api/hotels/cities/all"),
-
-  // Bookings
   createBooking: (payload) =>
     apiFetch("/api/bookings", { method: "POST", body: JSON.stringify(payload) }),
   getBooking: (id) => apiFetch(`/api/bookings/${id}`),
   cancelBooking: (id) => apiFetch(`/api/bookings/${id}`, { method: "DELETE" }),
 };
-
-window.API = API;

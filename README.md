@@ -1,6 +1,6 @@
 # 🏨 Innsight — Hotel Discovery App
 
-Full-stack hotel discovery web application built with **Node.js / Express** (backend) and **Vanilla JS** (frontend).
+Full-stack hotel discovery web application with **React** (frontend), **Node.js / Express** (backend), and **Python / FastAPI** (parallel backend).
 
 ---
 
@@ -8,61 +8,85 @@ Full-stack hotel discovery web application built with **Node.js / Express** (bac
 
 ```
 innsight/
-├── backend/
-│   ├── server.js              # Express entry point
-│   ├── package.json
-│   ├── data/
-│   │   └── hotels.js          # Hotel seed data + in-memory bookings store
-│   ├── routes/
-│   │   ├── hotels.js          # GET /api/hotels, /api/hotels/:id, /amenities/all
-│   │   └── bookings.js        # POST/GET/DELETE /api/bookings
-│   └── middleware/
-│       └── errorHandler.js    # Request logger, error handler, 404
-└── frontend/
-    ├── package.json
-    └── public/
-        ├── index.html         # Full SPA — Landing, Results, Detail pages
-        └── api.js             # API client (fetch wrapper)
+├── backend/                     # Node.js / Express API (port 3001)
+│   ├── server.js
+│   ├── data/hotels.js
+│   ├── routes/hotels.js
+│   ├── routes/bookings.js
+│   └── middleware/errorHandler.js
+├── python-backend/              # Python / FastAPI API (port 3002)
+│   ├── main.py
+│   ├── requirements.txt
+│   ├── data/hotels.py
+│   ├── routes/hotels.py
+│   ├── routes/bookings.py
+│   ├── models/hotel.py
+│   ├── models/booking.py
+│   └── middleware/error_handler.py
+└── frontend/                    # React SPA (Vite, port 3000)
+    ├── src/
+    │   ├── main.jsx
+    │   ├── App.jsx              # Router + ToastProvider
+    │   ├── App.css              # Full design system
+    │   ├── api.js               # API client (env-configurable base URL)
+    │   ├── pages/
+    │   │   ├── Landing.jsx      # Hero search, amenity pills, stats
+    │   │   ├── Results.jsx      # Sidebar filters + hotel grid
+    │   │   └── Detail.jsx       # Hotel info + booking form
+    │   └── components/
+    │       ├── Navbar.jsx
+    │       ├── HotelCard.jsx
+    │       ├── BookingModal.jsx
+    │       ├── Toast.jsx
+    │       └── Spinner.jsx
+    ├── index.html
+    ├── vite.config.js
+    └── package.json
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Start the Backend
+### 1. Choose a Backend
 
+**Option A — Node.js (Express) on port 3001:**
 ```bash
 cd backend
 npm install
-npm run dev        # uses nodemon for auto-reload
-# OR
-npm start          # plain node
+npm run dev        # nodemon for auto-reload
 ```
 
-Backend runs at **http://localhost:3001**
+**Option B — Python (FastAPI) on port 3002:**
+```bash
+cd python-backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 3002
+```
 
 ### 2. Start the Frontend
-
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
-
 Frontend runs at **http://localhost:3000**
 
-Open http://localhost:3000 in your browser.
+By default the React app calls `http://localhost:3001` (Node.js). To switch to the Python backend:
+```bash
+# On Windows PowerShell:
+$env:VITE_API_URL="http://localhost:3002"
+npm run dev
+
+# On Mac/Linux:
+VITE_API_URL=http://localhost:3002 npm run dev
+```
 
 ---
 
 ## API Reference
 
-### Base URL
-```
-http://localhost:3001
-```
-
-### Hotels
+Both backends expose the same endpoints:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -70,106 +94,33 @@ http://localhost:3001
 | GET | `/api/hotels/:id` | Get a single hotel |
 | GET | `/api/hotels/amenities/all` | All unique amenities |
 | GET | `/api/hotels/cities/all` | All cities |
+| POST | `/api/bookings` | Create a booking |
+| GET | `/api/bookings` | List all bookings |
+| GET | `/api/bookings/:id` | Get a booking |
+| DELETE | `/api/bookings/:id` | Cancel a booking |
 
-#### Query Parameters — `GET /api/hotels`
+### Query Parameters — `GET /api/hotels`
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `q` | string | Free-text search (name, location, description, amenities) |
+| `q` | string | Free-text search |
 | `city` | string | Filter by city name |
-| `amenities` | string | Comma-separated amenities e.g. `Swimming Pool,Gym` |
+| `amenities` | string | Comma-separated amenities |
 | `minPrice` | number | Minimum price per night |
 | `maxPrice` | number | Maximum price per night |
-| `stars` | number | Minimum star rating (3, 4, or 5) |
+| `stars` | number | Minimum star rating (3, 4, 5) |
 | `type` | string | Property type: Hotel, Resort, Boutique, Hostel |
 | `sort` | string | `price_asc`, `price_desc`, `rating`, `reviews` |
 
-#### Example Requests
-
-```bash
-# Search Nairobi hotels with pool and gym under $300
-curl "http://localhost:3001/api/hotels?city=Nairobi&amenities=Swimming Pool,Gym&maxPrice=300"
-
-# Top rated hotels
-curl "http://localhost:3001/api/hotels?sort=rating"
-
-# Full text search
-curl "http://localhost:3001/api/hotels?q=beachfront"
-```
-
-### Bookings
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/bookings` | Create a booking |
-| GET | `/api/bookings` | List all bookings |
-| GET | `/api/bookings/:id` | Get a booking by ID |
-| DELETE | `/api/bookings/:id` | Cancel a booking |
-
-#### POST `/api/bookings` — Request Body
-
-```json
-{
-  "hotelId": "h001",
-  "checkIn": "2025-09-01",
-  "checkOut": "2025-09-05",
-  "guests": 2,
-  "guestName": "Jane Mwangi",
-  "guestEmail": "jane@example.com"
-}
-```
-
-#### Response
-
-```json
-{
-  "message": "Booking confirmed!",
-  "booking": {
-    "id": "uuid-here",
-    "hotelId": "h001",
-    "hotelName": "The Nairobi Grand",
-    "checkIn": "2025-09-01",
-    "checkOut": "2025-09-05",
-    "nights": 4,
-    "guests": 2,
-    "guestName": "Jane Mwangi",
-    "subtotal": 1120,
-    "taxes": 179,
-    "total": 1299,
-    "status": "confirmed",
-    "createdAt": "2025-05-23T10:00:00.000Z"
-  }
-}
-```
-
 ---
 
-## What's Built
+## Features
 
-### Frontend (SPA — no framework)
 - **Landing page** — hero search with amenity pills, live stats from API
-- **Results page** — sidebar filters (price, stars, type, amenities) + hotel grid
-- **Detail page** — hotel info, full amenity list, policies, live booking form with price calc
+- **Results page** — sidebar filters (price, stars, type, amenities) + hotel grid with sort
+- **URL-persisted filters** — all search params in the URL (bookmarkable/shareable)
+- **Detail page** — full hotel info, amenity grid, policies, booking form with live price calc
 - **Booking confirmation** — modal with full booking summary
+- **Loading/empty/error states** — consistent UX across all pages
 - **Offline mode** — graceful fallback if API is unreachable
-
-### Backend (Express REST API)
-- Full search & filter engine (7 parameters)
-- Smart default sort (rating × log(reviews))
-- Booking validation (dates, required fields, price calculation)
-- 16% tax auto-calculation
-- Request logging middleware
-- Global error handler
-
----
-
-## Next Steps / Roadmap
-
-- [ ] Add a database (SQLite → PostgreSQL)
-- [ ] User authentication (JWT)
-- [ ] Image upload for hotel photos
-- [ ] Google Maps / Mapbox integration
-- [ ] Email confirmation (Nodemailer / SendGrid)
-- [ ] Admin dashboard for hotel management
-- [ ] Review & rating system
-- [ ] MPESA payment integration (Daraja API)
+- **Parallel backends** — Node.js or Python, switch via environment variable
