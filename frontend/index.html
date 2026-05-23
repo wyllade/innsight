@@ -3,11 +3,102 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Innsight — Hotel Discovery</title>
+    <meta name="description" content="Innsight — Find hotels by the life you want to live. Search by amenities like rooftop pools, gyms, breakfast, and more. Discover Kenya's best hotels." />
+    <meta name="keywords" content="hotels, Kenya, Nairobi, Mombasa, Diani, hotel booking, travel, accommodation" />
+    <meta name="author" content="Innsight" />
+    <meta name="theme-color" content="#0a0a0f" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Innsight" />
+    <meta property="og:title" content="Innsight — Smarter Hotel Discovery" />
+    <meta property="og:description" content="Find hotels by the life you want to live. Search by amenities, not just addresses." />
+    <meta property="og:url" content="https://innsight.app" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Innsight — Smarter Hotel Discovery" />
+    <meta name="twitter:description" content="Find hotels by the life you want to live. Search by amenities, not just addresses." />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- Preconnect / Preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+
+    <!-- Manifest + Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+    <!-- JSON-LD Website Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Innsight",
+      "description": "Hotel discovery platform that lets you search by amenities",
+      "url": "https://innsight.app",
+      "applicationCategory": "Travel",
+      "operatingSystem": "All"
+    }
+    </script>
+
+    <title>Innsight — Smarter Hotel Discovery</title>
+
+    <style>
+      /* Inline skeleton so the page shows content before React hydrates */
+      .sk-init {
+        --bg: #0a0a0f;
+        --surface: #13131a;
+        --text: #f0eee8;
+        --muted: #888897;
+        --accent: #c9a96e;
+        --font-display: 'Playfair Display', serif;
+        --font-body: 'DM Sans', sans-serif;
+      }
+      .sk-init body {
+        margin: 0;
+        background: #0a0a0f;
+        color: #f0eee8;
+        font-family: 'DM Sans', sans-serif;
+      }
+      .sk-nav {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 40px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: rgba(10,10,15,0.92);
+      }
+      .sk-logo { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #c9a96e; }
+      .sk-logo span { color: #f0eee8; }
+      .sk-spinner-row { display: flex; justify-content: center; padding: 80px 20px; }
+      .sk-spin { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.08); border-top-color: #c9a96e; border-radius: 50%; animation: sk-spin 0.7s linear infinite; }
+      @keyframes sk-spin { to { transform: rotate(360deg); } }
+      .sk-hide { display: none !important; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Skeleton shown before React hydrates -->
+      <div class="sk-init">
+        <div class="sk-nav">
+          <div class="sk-logo">Inn<span>sight</span></div>
+          <div style="display:flex;gap:28px;">
+            <span style="color:#888897;font-size:14px;">Discover</span>
+            <span style="color:#888897;font-size:14px;">Browse Hotels</span>
+          </div>
+          <span style="background:#c9a96e;color:#0a0a0f;padding:8px 20px;border-radius:40px;font-size:13px;">Search Hotels</span>
+        </div>
+        <div class="sk-spinner-row">
+          <div class="sk-spin"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

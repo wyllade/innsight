@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API } from "../api.js";
 import Spinner from "../components/Spinner.jsx";
+import PageHelmet from "../components/PageHelmet.jsx";
 import { useToast } from "../components/Toast.jsx";
 
 export default function MyBookings() {
@@ -44,127 +45,112 @@ export default function MyBookings() {
     }
   }
 
-  function getStatusStyle(status) {
-    switch (status) {
-      case "confirmed":
-        return { color: "var(--accent3)" };
-      case "cancelled":
-        return { color: "#e74c3c" };
-      default:
-        return { color: "var(--muted)" };
-    }
-  }
-
   return (
-    <div className="detail-wrap" style={{ maxWidth: 700 }}>
-      <button className="back-btn" onClick={() => navigate("/")}>← Back to home</button>
+    <>
+      <PageHelmet
+        title="My Bookings"
+        description="View and manage your hotel bookings. Look up reservations by email address."
+      />
+      <div className="bookings-page">
+        <button className="back-btn" onClick={() => navigate("/")} aria-label="Back to home">
+          ← Back to home
+        </button>
 
-      <h1 style={{
-        fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 700,
-        marginBottom: 24,
-      }}>
-        My Bookings
-      </h1>
+        <h1 className="bookings-title">
+          My Bookings
+        </h1>
 
-      <div style={{
-        background: "var(--surface)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius)", padding: 20, marginBottom: 28,
-      }}>
-        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
-          Enter the email address you used to book:
+        <div className="bookings-search">
+          <label htmlFor="booking-email" className="bookings-search-label">
+            Enter the email address you used to book:
+          </label>
+          <div className="bookings-search-row">
+            <input
+              id="booking-email"
+              className="search-field"
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+              aria-label="Email address for booking lookup"
+            />
+            <button className="search-btn" onClick={handleLookup} disabled={loading}
+              aria-label="Find bookings">
+              {loading ? "Searching..." : "Find Bookings"}
+            </button>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <input
-            className="search-field"
-            type="email"
-            placeholder="your@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-          />
-          <button className="search-btn" onClick={handleLookup} disabled={loading}>
-            {loading ? "Searching..." : "Find Bookings"}
-          </button>
-        </div>
+
+        {loading && <Spinner text="Looking up bookings..." />}
+
+        {!loading && searched && bookings.length === 0 && (
+          <div className="error-state">
+            <h3>No bookings found</h3>
+            <p>No bookings were found for this email address.</p>
+          </div>
+        )}
+
+        {!loading && bookings.length > 0 && (
+          <div className="booking-list" role="list" aria-label="Your bookings">
+            {bookings.map((b) => (
+              <div key={b.id} className="booking-card-item" role="listitem">
+                <div className="booking-card-header">
+                  <div>
+                    <div className="booking-card-name">{b.hotelName}</div>
+                    <div className="booking-card-location">{b.hotelLocation}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div className={`booking-card-status ${b.status}`}>
+                      {b.status}
+                    </div>
+                    <div className="booking-card-id">
+                      {b.id?.split("-")[0].toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="booking-card-details">
+                  <div>
+                    <span className="booking-detail-label">Check-in</span>
+                    {b.checkIn}
+                  </div>
+                  <div>
+                    <span className="booking-detail-label">Check-out</span>
+                    {b.checkOut}
+                  </div>
+                  <div>
+                    <span className="booking-detail-label">Guests</span>
+                    {b.guests}
+                  </div>
+                  <div>
+                    <span className="booking-detail-label">Room</span>
+                    {b.roomType || "Standard"}
+                  </div>
+                  <div>
+                    <span className="booking-detail-label">Nights</span>
+                    {b.nights}
+                  </div>
+                  <div>
+                    <span className="booking-detail-label">Total</span>
+                    <span className="booking-detail-total">${b.total}</span>
+                  </div>
+                </div>
+
+                {b.status === "confirmed" && (
+                  <button
+                    className="booking-cancel-btn"
+                    onClick={() => handleCancel(b.id)}
+                    aria-label={`Cancel booking at ${b.hotelName}`}
+                  >
+                    Cancel Booking
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {loading && <Spinner text="Looking up bookings..." />}
-
-      {!loading && searched && bookings.length === 0 && (
-        <div className="error-state">
-          <h3>No bookings found</h3>
-          <p>No bookings were found for this email address.</p>
-        </div>
-      )}
-
-      {!loading && bookings.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {bookings.map((b) => (
-            <div key={b.id} style={{
-              background: "var(--surface)", border: "1px solid var(--border)",
-              borderRadius: "var(--radius)", padding: 18,
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 16 }}>{b.hotelName}</div>
-                  <div style={{ fontSize: 12, color: "var(--muted)" }}>{b.hotelLocation}</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{
-                    fontSize: 12, fontWeight: 500, textTransform: "uppercase",
-                    ...getStatusStyle(b.status),
-                  }}>
-                    {b.status}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                    {b.id?.split("-")[0].toUpperCase()}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{
-                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10,
-                fontSize: 13, color: "var(--muted)", marginBottom: 12,
-              }}>
-                <div>
-                  <span style={{ display: "block", fontSize: 11, color: "var(--text)", fontWeight: 500 }}>Check-in</span>
-                  {b.checkIn}
-                </div>
-                <div>
-                  <span style={{ display: "block", fontSize: 11, color: "var(--text)", fontWeight: 500 }}>Check-out</span>
-                  {b.checkOut}
-                </div>
-                <div>
-                  <span style={{ display: "block", fontSize: 11, color: "var(--text)", fontWeight: 500 }}>Guests</span>
-                  {b.guests}
-                </div>
-                <div>
-                  <span style={{ display: "block", fontSize: 11, color: "var(--text)", fontWeight: 500 }}>Room</span>
-                  {b.roomType || "Standard"}
-                </div>
-                <div>
-                  <span style={{ display: "block", fontSize: 11, color: "var(--text)", fontWeight: 500 }}>Nights</span>
-                  {b.nights}
-                </div>
-                <div>
-                  <span style={{ display: "block", fontSize: 11, color: "var(--text)", fontWeight: 500 }}>Total</span>
-                  <span style={{ color: "var(--accent)", fontWeight: 700 }}>${b.total}</span>
-                </div>
-              </div>
-
-              {b.status === "confirmed" && (
-                <button
-                  className="back-btn"
-                  onClick={() => handleCancel(b.id)}
-                  style={{ color: "#e74c3c", borderColor: "rgba(231,76,60,0.3)" }}
-                >
-                  Cancel Booking
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    </>
   );
 }

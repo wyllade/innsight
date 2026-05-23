@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { API } from "../api.js";
 import HotelCard from "../components/HotelCard.jsx";
 import Spinner from "../components/Spinner.jsx";
+import PageHelmet from "../components/PageHelmet.jsx";
 import { amenityIcon } from "../components/HotelCard.jsx";
 
 export default function Results() {
@@ -27,7 +28,6 @@ export default function Results() {
   const selectedAmenities = searchParams.get("amenities")?.split(",").filter(Boolean) || [];
   const page = parseInt(searchParams.get("page")) || 1;
 
-  // Get highest price from data to set slider max
   useEffect(() => {
     async function loadAmenities() {
       try {
@@ -104,170 +104,199 @@ export default function Results() {
     updateParam("amenities", [...current].join(","));
   }
 
-  return (
-    <div className="results-layout">
-      <aside className="sidebar">
-        <div className="filter-section">
-          <h3>Price per night</h3>
-          <input
-            type="range"
-            className="price-range"
-            min="0"
-            max={maxPriceLimit}
-            value={maxPrice || maxPriceLimit}
-            step="10"
-            onChange={(e) => {
-              const val = e.target.value;
-              updateParam("maxPrice", Number(val) >= maxPriceLimit ? "" : val);
-            }}
-          />
-          <div className="price-labels">
-            <span>$0</span>
-            <span>{maxPrice && Number(maxPrice) < maxPriceLimit ? `Up to $${maxPrice}` : "Any price"}</span>
-          </div>
-        </div>
+  const pageTitle = city ? `${city} Hotels` : "Browse Hotels";
+  const pageDesc = city
+    ? `Discover the best hotels in ${city}. Filter by price, amenities, star rating, and more.`
+    : "Browse our full collection of hotels. Filter by price, amenities, location, and star rating to find your perfect stay.";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": hotels.slice(0, 10).map((h, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "Hotel",
+        "name": h.name,
+        "url": `https://innsight.app/hotel/${h.id}`,
+        "image": h.images?.[0] || "",
+        "address": { "@type": "PostalAddress", "addressLocality": h.city },
+      },
+    })),
+  };
 
-        <div className="filter-section">
-          <h3>Star rating</h3>
-          <div className="star-filter">
-            {["3", "4", "5"].map((s) => (
-              <button
-                key={s}
-                className={`star-btn ${stars === s ? "active" : ""}`}
-                onClick={() => updateParam("stars", stars === s ? "" : s)}
-              >
-                {s}+ ★
-              </button>
+  return (
+    <>
+      <PageHelmet title={pageTitle} description={pageDesc} jsonLd={jsonLd} />
+      <div className="results-layout">
+        <aside className="sidebar" role="complementary" aria-label="Filters">
+          <div className="filter-section">
+            <h3>Price per night</h3>
+            <input
+              type="range"
+              className="price-range"
+              min="0"
+              max={maxPriceLimit}
+              value={maxPrice || maxPriceLimit}
+              step="10"
+              onChange={(e) => {
+                const val = e.target.value;
+                updateParam("maxPrice", Number(val) >= maxPriceLimit ? "" : val);
+              }}
+              aria-label="Maximum price per night"
+            />
+            <div className="price-labels">
+              <span>$0</span>
+              <span>{maxPrice && Number(maxPrice) < maxPriceLimit ? `Up to $${maxPrice}` : "Any price"}</span>
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <h3>Star rating</h3>
+            <div className="star-filter" role="group" aria-label="Star rating">
+              {["3", "4", "5"].map((s) => (
+                <button
+                  key={s}
+                  className={`star-btn ${stars === s ? "active" : ""}`}
+                  onClick={() => updateParam("stars", stars === s ? "" : s)}
+                  aria-pressed={stars === s}
+                >
+                  {s}+ ★
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <h3>Property type</h3>
+            {["Hotel", "Resort", "Boutique", "Hostel"].map((t) => (
+              <label className="filter-check" key={t}>
+                <input
+                  type="checkbox"
+                  checked={typeParam.includes(t)}
+                  onChange={() => {
+                    const current = new Set(typeParam ? typeParam.split(",") : []);
+                    if (current.has(t)) current.delete(t);
+                    else current.add(t);
+                    updateParam("type", [...current].join(","));
+                  }}
+                />
+                {" "}{t}
+              </label>
             ))}
           </div>
-        </div>
 
-        <div className="filter-section">
-          <h3>Property type</h3>
-          {["Hotel", "Resort", "Boutique", "Hostel"].map((t) => (
-            <label className="filter-check" key={t}>
-              <input
-                type="checkbox"
-                checked={typeParam.includes(t)}
-                onChange={() => {
-                  const current = new Set(typeParam ? typeParam.split(",") : []);
-                  if (current.has(t)) current.delete(t);
-                  else current.add(t);
-                  updateParam("type", [...current].join(","));
-                }}
-              />
-              {" "}{t}
-            </label>
-          ))}
-        </div>
-
-        <div className="filter-section">
-          <h3>Amenities</h3>
-          {allAmenities.map((a) => (
-            <label className="filter-check" key={a}>
-              <input
-                type="checkbox"
-                checked={selectedAmenities.includes(a)}
-                onChange={() => toggleAmenity(a)}
-              />
-              {" "}{amenityIcon(a)} {a}
-            </label>
-          ))}
-        </div>
-      </aside>
-
-      <main className="results-main">
-        <div className="results-header">
-          <div>
-            <h2>{city ? `${city} Hotels` : "All Hotels"}</h2>
-            <div className="results-count">
-              {loading ? "Searching..." : `Showing ${total} propert${total === 1 ? "y" : "ies"}`}
-            </div>
+          <div className="filter-section">
+            <h3 id="amenities-heading">Amenities</h3>
+            {allAmenities.map((a) => (
+              <label className="filter-check" key={a}>
+                <input
+                  type="checkbox"
+                  checked={selectedAmenities.includes(a)}
+                  onChange={() => toggleAmenity(a)}
+                />
+                {" "}{amenityIcon(a)} {a}
+              </label>
+            ))}
           </div>
-          <select
-            className="sort-select"
-            value={sort}
-            onChange={(e) => updateParam("sort", e.target.value)}
-          >
-            <option value="">Best match</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="rating">Top Rated</option>
-            <option value="reviews">Most Reviewed</option>
-          </select>
-        </div>
+        </aside>
 
-        {checkin && checkout && (
-          <div style={{
-            fontSize: 12, color: "var(--accent)", marginBottom: 16,
-            padding: "6px 12px", background: "rgba(201,169,110,0.08)",
-            borderRadius: "var(--radius-sm)", display: "inline-block",
-          }}>
-            📅 {checkin} → {checkout}
+        <main className="results-main" id="main-content" role="main">
+          <div className="results-header">
+            <div>
+              <h2>{pageTitle}</h2>
+              <div className="results-count" aria-live="polite">
+                {loading ? "Searching..." : `Showing ${total} propert${total === 1 ? "y" : "ies"}`}
+              </div>
+            </div>
+            <select
+              className="sort-select"
+              value={sort}
+              onChange={(e) => updateParam("sort", e.target.value)}
+              aria-label="Sort results"
+            >
+              <option value="">Best match</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="rating">Top Rated</option>
+              <option value="reviews">Most Reviewed</option>
+            </select>
           </div>
-        )}
 
-        <div className="hotel-grid">
-          {loading ? (
-            <div style={{ gridColumn: "1 / -1" }}>
-              <Spinner text="Loading hotels..." />
+          {checkin && checkout && (
+            <div style={{
+              fontSize: 12, color: "var(--accent)", marginBottom: 16,
+              padding: "6px 12px", background: "rgba(201,169,110,0.08)",
+              borderRadius: "var(--radius-sm)", display: "inline-block",
+            }}>
+              📅 {checkin} → {checkout}
             </div>
-          ) : error ? (
-            <div className="error-state" style={{ gridColumn: "1 / -1" }}>
-              <h3>Could not load hotels</h3>
-              <p>Make sure the backend server is running at <code>http://localhost:3001</code></p>
-              <p style={{ marginTop: 8, fontSize: 12 }}>{error}</p>
-            </div>
-          ) : hotels.length === 0 ? (
-            <div className="error-state" style={{ gridColumn: "1 / -1" }}>
-              <h3>No hotels found</h3>
-              <p>Try adjusting your filters or search terms.</p>
-            </div>
-          ) : (
-            hotels.map((h, i) => <HotelCard key={h.id} hotel={h} index={i} />)
           )}
-        </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && !loading && (
-          <div style={{
-            display: "flex", justifyContent: "center", gap: 8, marginTop: 32,
-          }}>
-            <button
-              className="back-btn"
-              disabled={page <= 1}
-              onClick={() => goToPage(page - 1)}
-              style={{ opacity: page <= 1 ? 0.4 : 1 }}
-            >
-              ← Previous
-            </button>
-            {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
-              const p = i + 1;
-              return (
-                <button
-                  key={p}
-                  className="star-btn"
-                  style={p === page ? {
-                    background: "rgba(201,169,110,0.12)",
-                    borderColor: "var(--accent)", color: "var(--accent)",
-                  } : {}}
-                  onClick={() => goToPage(p)}
-                >
-                  {p}
-                </button>
-              );
-            })}
-            <button
-              className="back-btn"
-              disabled={page >= totalPages}
-              onClick={() => goToPage(page + 1)}
-              style={{ opacity: page >= totalPages ? 0.4 : 1 }}
-            >
-              Next →
-            </button>
+          <div className="hotel-grid" role="list" aria-label="Hotel results">
+            {loading ? (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <Spinner text="Loading hotels..." />
+              </div>
+            ) : error ? (
+              <div className="error-state" style={{ gridColumn: "1 / -1" }} role="alert">
+                <h3>Could not load hotels</h3>
+                <p>Make sure the backend server is running at <code>http://localhost:3001</code></p>
+                <p style={{ marginTop: 8, fontSize: 12 }}>{error}</p>
+              </div>
+            ) : hotels.length === 0 ? (
+              <div className="error-state" style={{ gridColumn: "1 / -1" }}>
+                <h3>No hotels found</h3>
+                <p>Try adjusting your filters or search terms.</p>
+              </div>
+            ) : (
+              hotels.map((h, i) => <HotelCard key={h.id} hotel={h} index={i} />)
+            )}
           </div>
-        )}
-      </main>
-    </div>
+
+          {totalPages > 1 && !loading && (
+            <nav aria-label="Pagination" style={{
+              display: "flex", justifyContent: "center", gap: 8, marginTop: 32,
+            }}>
+              <button
+                className="back-btn"
+                disabled={page <= 1}
+                onClick={() => goToPage(page - 1)}
+                style={{ opacity: page <= 1 ? 0.4 : 1 }}
+                aria-label="Previous page"
+              >
+                ← Previous
+              </button>
+              {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+                const p = i + 1;
+                return (
+                  <button
+                    key={p}
+                    className="star-btn"
+                    style={p === page ? {
+                      background: "rgba(201,169,110,0.12)",
+                      borderColor: "var(--accent)", color: "var(--accent)",
+                    } : {}}
+                    onClick={() => goToPage(p)}
+                    aria-label={`Page ${p}`}
+                    aria-current={p === page ? "page" : undefined}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+              <button
+                className="back-btn"
+                disabled={page >= totalPages}
+                onClick={() => goToPage(page + 1)}
+                style={{ opacity: page >= totalPages ? 0.4 : 1 }}
+                aria-label="Next page"
+              >
+                Next →
+              </button>
+            </nav>
+          )}
+        </main>
+      </div>
+    </>
   );
 }
