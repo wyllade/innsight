@@ -16,6 +16,7 @@ services:
   # React frontend (static)
   - type: static
     name: innsight-frontend
+    branch: frontend
     repo: https://github.com/wyllade/innsight
     rootDir: frontend
     buildCommand: npm install && npm run build
