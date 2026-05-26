@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Hotel, MapPin, Waves, Wifi, Dumbbell, Coffee, Sparkles, Car,
+  UtensilsCrossed, Wine, Plane, PawPrint, ConciergeBell, Presentation, Check,
+} from "lucide-react";
 
 const GRADIENTS = [
   "linear-gradient(135deg,#1a1635 0%,#2d1f4a 100%)",
@@ -13,13 +17,14 @@ const GRADIENTS = [
 ];
 
 const AMENITY_ICONS = {
-  "Swimming Pool": "🏊", "Free WiFi": "📶", "Gym": "💪", "Breakfast": "🍳",
-  "Spa": "🧖", "Parking": "🅿️", "Restaurant": "🍽️", "Bar": "🍸",
-  "Airport Shuttle": "✈️", "Pet Friendly": "🐾", "Room Service": "🛎️", "Conference": "📊",
+  "Swimming Pool": Waves, "Free WiFi": Wifi, "Gym": Dumbbell, "Breakfast": Coffee,
+  "Spa": Sparkles, "Parking": Car, "Restaurant": UtensilsCrossed, "Bar": Wine,
+  "Airport Shuttle": Plane, "Pet Friendly": PawPrint, "Room Service": ConciergeBell, "Conference": Presentation,
 };
 
-export function amenityIcon(a) {
-  return AMENITY_ICONS[a] || "✓";
+export function amenityIcon(a, size = 14) {
+  const Icon = AMENITY_ICONS[a];
+  return Icon ? <Icon size={size} /> : <Check size={size} />;
 }
 
 export { GRADIENTS };
@@ -28,7 +33,7 @@ export default function HotelCard({ hotel, index = 0 }) {
   const navigate = useNavigate();
   const [imgError, setImgError] = useState(false);
   const tags = (hotel.amenities || []).slice(0, 3).map((a) => (
-    <span className="hotel-amenity" key={a}>{amenityIcon(a)} {a}</span>
+    <span className="hotel-amenity" key={a}>{amenityIcon(a, 12)} {a}</span>
   ));
 
   const hasImage = hotel.images && hotel.images[0] && !imgError;
@@ -43,7 +48,7 @@ export default function HotelCard({ hotel, index = 0 }) {
             : GRADIENTS[index % GRADIENTS.length],
         }}
       >
-        {!hasImage && <span>{hotel.emoji || "🏨"}</span>}
+        {!hasImage && <Hotel size={52} strokeWidth={1.5} />}
         {hasImage && (
           <img
             src={hotel.images[0]}
@@ -56,7 +61,9 @@ export default function HotelCard({ hotel, index = 0 }) {
       </div>
       <div className="hotel-body">
         <div className="hotel-name">{hotel.name}</div>
-        <div className="hotel-location">📍 {hotel.location}</div>
+        <div className="hotel-location">
+          <MapPin size={12} style={{ verticalAlign: "middle", marginRight: 2 }} /> {hotel.location}
+        </div>
         <div className="hotel-amenities">{tags}</div>
         <div className="hotel-footer">
           <div className="hotel-price">${hotel.pricePerNight} <span>/ night</span></div>

@@ -1,10 +1,12 @@
+import { Sparkles } from "lucide-react";
+
 export default function BookingModal({ booking, onClose }) {
   if (!booking) return null;
 
   return (
     <div className="confirm-overlay show" onClick={onClose}>
       <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
-        <div className="confirm-icon">🎉</div>
+        <div className="confirm-icon"><Sparkles size={48} strokeWidth={1.5} /></div>
         <h2>Booking Confirmed!</h2>
         <p>Your reservation is locked in. Details below.</p>
         <div className="confirm-detail">

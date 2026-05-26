@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { hotels, reviews: allReviews } = require("../data/hotels");
+const { hotels, bookings, reviews: allReviews } = require("../data/hotels");
 
 // GET /api/hotels — search & filter
 router.get("/", (req, res) => {
@@ -66,7 +66,6 @@ router.get("/", (req, res) => {
     const inDate = new Date(checkIn);
     const outDate = new Date(checkOut);
     if (!isNaN(inDate) && !isNaN(outDate) && outDate > inDate) {
-      const { bookings } = require("../data/hotels");
       results = results.filter((h) => {
         const overlapping = bookings.filter(
           (b) =>
@@ -200,7 +199,6 @@ router.get("/:id/availability", (req, res) => {
     return res.status(400).json({ error: "Invalid date range" });
   }
 
-  const { bookings } = require("../data/hotels");
   const overlapping = bookings.filter(
     (b) =>
       b.hotelId === hotel.id &&

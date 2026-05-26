@@ -38,6 +38,7 @@ def root():
                 "create": "POST /api/bookings",
                 "list": "GET /api/bookings",
                 "single": "GET /api/bookings/{id}",
+                "modify": "PATCH /api/bookings/{id}",
                 "cancel": "DELETE /api/bookings/{id}",
             },
         },

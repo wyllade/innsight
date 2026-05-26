@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { MapPin, ArrowRight } from "lucide-react";
 import { API } from "../api.js";
 import Spinner from "../components/Spinner.jsx";
 import PageHelmet from "../components/PageHelmet.jsx";
@@ -69,7 +70,7 @@ export default function Landing() {
           <div className="search-row">
             <input
               className="search-field"
-              placeholder="🏙  City or destination..."
+              placeholder="City or destination..."
               style={{ flex: 2 }}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -80,7 +81,7 @@ export default function Landing() {
             <input className="search-field" type="date" value={checkout}
               onChange={(e) => setCheckout(e.target.value)} aria-label="Check-out date" />
             <button className="search-btn" onClick={handleSearch} aria-label="Search hotels">
-              Search →
+              Search <ArrowRight size={14} style={{ verticalAlign: "middle", marginLeft: 2 }} />
             </button>
           </div>
           <div>
@@ -98,7 +99,7 @@ export default function Landing() {
                     onClick={() => togglePill(a)}
                     aria-pressed={selectedAmenities.has(a)}
                   >
-                    {amenityIcon(a)} {a}
+                    {amenityIcon(a, 14)} {a}
                   </button>
                 ))
               )}

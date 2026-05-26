@@ -1,3 +1,6 @@
+import math
+import time
+from datetime import datetime
 from fastapi import APIRouter, Query, HTTPException
 from data.hotels import hotels, reviews as all_reviews, bookings
 from middleware.error_handler import filter_hotels, paginate
@@ -31,7 +34,7 @@ def list_hotels(
 @router.get("/featured")
 def get_featured():
     featured = sorted(
-        hotels, key=lambda h: h["rating"] * __import__("math").log10(h["reviews"] + 1), reverse=True
+        hotels, key=lambda h: h["rating"] * math.log10(h["reviews"] + 1), reverse=True
     )[:4]
     return {"total": len(featured), "results": featured}
 
@@ -85,14 +88,13 @@ def add_hotel_review(hotel_id: str, body: dict):
     if num_rating < 1 or num_rating > 5:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
 
-    import time
     review = {
         "id": "r" + str(int(time.time() * 1000)),
         "hotelId": hotel_id,
         "author": author,
         "rating": num_rating,
         "text": text,
-        "date": __import__("datetime").datetime.utcnow().strftime("%Y-%m-%d"),
+        "date": datetime.utcnow().strftime("%Y-%m-%d"),
     }
 
     all_reviews.append(review)
@@ -111,10 +113,9 @@ def check_availability(hotel_id: str, checkIn: str = Query(...), checkOut: str =
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")
 
-    from datetime import datetime as dt
     try:
-        ci = dt.strptime(checkIn, "%Y-%m-%d")
-        co = dt.strptime(checkOut, "%Y-%m-%d")
+        ci = datetime.strptime(checkIn, "%Y-%m-%d")
+        co = datetime.strptime(checkOut, "%Y-%m-%d")
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
@@ -125,8 +126,8 @@ def check_availability(hotel_id: str, checkIn: str = Query(...), checkOut: str =
         b for b in bookings
         if b["hotelId"] == hotel_id
         and b["status"] != "cancelled"
-        and dt.strptime(b["checkIn"], "%Y-%m-%d") < co
-        and dt.strptime(b["checkOut"], "%Y-%m-%d") > ci
+        and datetime.strptime(b["checkIn"], "%Y-%m-%d") < co
+        and datetime.strptime(b["checkOut"], "%Y-%m-%d") > ci
     ]
 
     return {

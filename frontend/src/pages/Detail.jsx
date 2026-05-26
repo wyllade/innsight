@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { MapPin, Hotel, Clock, PawPrint, Ban, CreditCard, FileText, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { API } from "../api.js";
 import { amenityIcon, GRADIENTS } from "../components/HotelCard.jsx";
 import BookingModal from "../components/BookingModal.jsx";
@@ -142,9 +143,14 @@ export default function Detail() {
   const price = calcPrice();
   const images = hotel.images?.length ? hotel.images : [];
   const policyMap = {
-    free_cancellation: "✅ Free cancellation",
-    partial_refund: "⚠️ Partial refund available",
-    non_refundable: "🚫 Non-refundable",
+    free_cancellation: "Free cancellation",
+    partial_refund: "Partial refund available",
+    non_refundable: "Non-refundable",
+  };
+  const policyIcon = {
+    free_cancellation: <CheckCircle2 size={16} style={{ verticalAlign: "middle", marginRight: 4 }} />,
+    partial_refund: <AlertTriangle size={16} style={{ verticalAlign: "middle", marginRight: 4 }} />,
+    non_refundable: <XCircle size={16} style={{ verticalAlign: "middle", marginRight: 4 }} />,
   };
 
   const jsonLd = {
@@ -218,7 +224,7 @@ export default function Detail() {
           </div>
         ) : (
           <div className="detail-hero" style={{ background: GRADIENTS[idx] }}>
-            <span>{hotel.emoji || "🏨"}</span>
+            <Hotel size={80} strokeWidth={1.5} />
           </div>
         )}
 
@@ -226,7 +232,9 @@ export default function Detail() {
           <div className="detail-main">
             <h1 className="detail-name">{hotel.name}</h1>
             <div className="detail-meta">
-              <span className="detail-loc">📍 {hotel.location}</span>
+              <span className="detail-loc">
+                <MapPin size={14} style={{ verticalAlign: "middle", marginRight: 2 }} /> {hotel.location}
+              </span>
               <span className="detail-rating-big">★ {hotel.rating}  ({hotel.reviews.toLocaleString()} reviews)</span>
               <span style={{
                 background: "var(--surface2)", border: "1px solid var(--border)",
@@ -279,7 +287,7 @@ export default function Detail() {
             <div className="amenity-grid">
               {(hotel.amenities || []).map((a) => (
                 <div className="amenity-item" key={a}>
-                  <span style={{ fontSize: 18 }}>{amenityIcon(a)}</span> {a}
+                  <span style={{ display: "inline-flex", verticalAlign: "middle" }}>{amenityIcon(a, 18)}</span> {a}
                 </div>
               ))}
             </div>
@@ -287,17 +295,26 @@ export default function Detail() {
             <h2 className="detail-section-title">Policies</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 28 }}>
               <div style={{ fontSize: 13, color: "var(--muted)" }}>
-                🕐 Check-in: {hotel.checkIn || "14:00"} — Check-out: {hotel.checkOut || "12:00"}
+                <Clock size={14} style={{ verticalAlign: "middle", marginRight: 4 }} />
+                Check-in: {hotel.checkIn || "14:00"} — Check-out: {hotel.checkOut || "12:00"}
               </div>
               <div style={{ fontSize: 13, color: "var(--muted)" }}>
-                {hotel.petsAllowed ? "🐾 Pets welcome" : "🚫 No pets"}
+                {hotel.petsAllowed ? (
+                  <><PawPrint size={14} style={{ verticalAlign: "middle", marginRight: 4 }} />Pets welcome</>
+                ) : (
+                  <><Ban size={14} style={{ verticalAlign: "middle", marginRight: 4 }} />No pets</>
+                )}
               </div>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>🚭 Non-smoking property</div>
               <div style={{ fontSize: 13, color: "var(--muted)" }}>
-                💳 {(hotel.payments || []).join(", ")}
+                <Ban size={14} style={{ verticalAlign: "middle", marginRight: 4 }} />Non-smoking property
+              </div>
+              <div style={{ fontSize: 13, color: "var(--muted)" }}>
+                <CreditCard size={14} style={{ verticalAlign: "middle", marginRight: 4 }} />
+                {(hotel.payments || []).join(", ")}
               </div>
               <div style={{ fontSize: 13, color: "var(--accent)" }}>
-                {policyMap[hotel.cancellationPolicy] || "📋 Standard cancellation policy"}
+                {policyIcon[hotel.cancellationPolicy] || <FileText size={14} style={{ verticalAlign: "middle", marginRight: 4 }} />}
+                {policyMap[hotel.cancellationPolicy] || "Standard cancellation policy"}
               </div>
             </div>
 

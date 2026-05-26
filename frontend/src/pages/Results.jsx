@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Calendar } from "lucide-react";
 import { API } from "../api.js";
 import HotelCard from "../components/HotelCard.jsx";
 import Spinner from "../components/Spinner.jsx";
@@ -194,7 +195,7 @@ export default function Results() {
                   checked={selectedAmenities.includes(a)}
                   onChange={() => toggleAmenity(a)}
                 />
-                {" "}{amenityIcon(a)} {a}
+                {" "}{amenityIcon(a, 14)} {a}
               </label>
             ))}
           </div>
@@ -226,9 +227,9 @@ export default function Results() {
             <div style={{
               fontSize: 12, color: "var(--accent)", marginBottom: 16,
               padding: "6px 12px", background: "rgba(201,169,110,0.08)",
-              borderRadius: "var(--radius-sm)", display: "inline-block",
+              borderRadius: "var(--radius-sm)", display: "inline-flex", alignItems: "center", gap: 4,
             }}>
-              📅 {checkin} → {checkout}
+              <Calendar size={12} /> {checkin} → {checkout}
             </div>
           )}
 
