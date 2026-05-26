@@ -5,7 +5,7 @@ const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
 export default function PageHelmet({
   title,
   description = "Find hotels by the life you want to live. Search by amenities, not just addresses.",
-  image = "/og-image.png",
+  image = `${SITE_URL}/og-image.png`,
   url = SITE_URL,
   jsonLd,
 }) {

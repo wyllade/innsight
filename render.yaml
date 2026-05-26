@@ -1,0 +1,27 @@
+services:
+  # Node.js backend API
+  - type: web
+    name: innsight-api
+    runtime: node
+    repo: https://github.com/wyllade/innsight
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+
+  # React frontend (static)
+  - type: static
+    name: innsight-frontend
+    repo: https://github.com/wyllade/innsight
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://innsight-api.onrender.com
+      - key: VITE_SITE_URL
+        value: https://innsight-frontend.onrender.com
