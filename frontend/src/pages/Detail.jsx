@@ -8,6 +8,8 @@ import Spinner from "../components/Spinner.jsx";
 import PageHelmet from "../components/PageHelmet.jsx";
 import { useToast } from "../components/Toast.jsx";
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
+
 export default function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -159,7 +161,7 @@ export default function Detail() {
     "name": hotel.name,
     "description": hotel.description,
     "image": images[0] || "",
-    "url": `https://innsight.app/hotel/${hotel.id}`,
+    "url": `${SITE_URL}/hotel/${hotel.id}`,
     "telephone": "",
     "address": {
       "@type": "PostalAddress",
@@ -185,7 +187,7 @@ export default function Detail() {
         title={hotel.name}
         description={`${hotel.name} — ${hotel.location}. ★ ${hotel.rating} (${hotel.reviews.toLocaleString()} reviews). From $${hotel.pricePerNight}/night.`}
         image={images[0] || "/og-image.png"}
-        url={`https://innsight.app/hotel/${hotel.id}`}
+        url={`${SITE_URL}/hotel/${hotel.id}`}
         jsonLd={jsonLd}
       />
       <div className="detail-wrap">

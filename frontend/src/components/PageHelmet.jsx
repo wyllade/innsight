@@ -1,10 +1,12 @@
 import { Helmet } from "react-helmet-async";
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
+
 export default function PageHelmet({
   title,
   description = "Find hotels by the life you want to live. Search by amenities, not just addresses.",
   image = "/og-image.png",
-  url = "https://innsight.app",
+  url = SITE_URL,
   jsonLd,
 }) {
   const fullTitle = title ? `${title} | Innsight` : "Innsight — Smarter Hotel Discovery";

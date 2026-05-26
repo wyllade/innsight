@@ -7,6 +7,8 @@ import Spinner from "../components/Spinner.jsx";
 import PageHelmet from "../components/PageHelmet.jsx";
 import { amenityIcon } from "../components/HotelCard.jsx";
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
+
 export default function Results() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -118,7 +120,7 @@ export default function Results() {
       "item": {
         "@type": "Hotel",
         "name": h.name,
-        "url": `https://innsight.app/hotel/${h.id}`,
+        "url": `${SITE_URL}/hotel/${h.id}`,
         "image": h.images?.[0] || "",
         "address": { "@type": "PostalAddress", "addressLocality": h.city },
       },
