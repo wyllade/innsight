@@ -1,4 +1,3 @@
-// Global error handler
 function errorHandler(err, req, res, next) {
   console.error(`[${new Date().toISOString()}] ERROR:`, err.stack);
 
@@ -9,7 +8,7 @@ function errorHandler(err, req, res, next) {
   });
 }
 
-// Request logger
+
 function requestLogger(req, res, next) {
   const start = Date.now();
   res.on("finish", () => {
@@ -21,7 +20,7 @@ function requestLogger(req, res, next) {
   next();
 }
 
-// 404 handler
+
 function notFound(req, res, next) {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.originalUrl}` });
 }
