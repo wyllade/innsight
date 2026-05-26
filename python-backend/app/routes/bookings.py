@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query
-from data.hotels import hotels, bookings, reviews
-from middleware.error_handler import create_booking_record
+from app.data.hotels import hotels, bookings, reviews
+from app.middleware.error_handler import create_booking_record
 
 router = APIRouter()
 

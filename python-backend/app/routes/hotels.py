@@ -2,8 +2,8 @@ import math
 import time
 from datetime import datetime
 from fastapi import APIRouter, Query, HTTPException
-from data.hotels import hotels, reviews as all_reviews, bookings
-from middleware.error_handler import filter_hotels, paginate
+from app.data.hotels import hotels, reviews as all_reviews, bookings
+from app.middleware.error_handler import filter_hotels, paginate
 
 router = APIRouter()
 

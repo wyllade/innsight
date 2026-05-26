@@ -1,9 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { errorHandler, requestLogger, notFound } = require("./middleware/errorHandler");
-const hotelsRouter = require("./routes/hotels");
-const bookingsRouter = require("./routes/bookings");
+const { errorHandler, requestLogger, notFound } = require("./src/middleware/errorHandler");
+const hotelsRouter = require("./src/routes/hotels");
+const bookingsRouter = require("./src/routes/bookings");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
