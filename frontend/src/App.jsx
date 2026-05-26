@@ -1,8 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { ToastProvider } from "./components/Toast.jsx";
-import ErrorBoundary from "./components/ErrorBoundary.jsx";
-import Navbar from "./components/Navbar.jsx";
+import { ToastProvider } from "./components/common/Toast.jsx";
+import ErrorBoundary from "./components/common/ErrorBoundary.jsx";
+import Navbar from "./components/layout/Navbar.jsx";
 import Landing from "./pages/Landing.jsx";
 import Results from "./pages/Results.jsx";
 import Detail from "./pages/Detail.jsx";

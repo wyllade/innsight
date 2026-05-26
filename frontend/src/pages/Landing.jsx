@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, ArrowRight } from "lucide-react";
-import { API } from "../api.js";
-import Spinner from "../components/Spinner.jsx";
-import PageHelmet from "../components/PageHelmet.jsx";
-import { amenityIcon } from "../components/HotelCard.jsx";
+import { API } from "../services/api.js";
+import Spinner from "../components/common/Spinner.jsx";
+import PageHelmet from "../components/common/PageHelmet.jsx";
+import { amenityIcon } from "../components/hotels/HotelCard.jsx";
 
 export default function Landing() {
   const navigate = useNavigate();

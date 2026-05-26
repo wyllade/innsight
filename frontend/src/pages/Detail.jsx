@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Hotel, Clock, PawPrint, Ban, CreditCard, FileText, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
-import { API } from "../api.js";
-import { amenityIcon, GRADIENTS } from "../components/HotelCard.jsx";
-import BookingModal from "../components/BookingModal.jsx";
-import Spinner from "../components/Spinner.jsx";
-import PageHelmet from "../components/PageHelmet.jsx";
-import { useToast } from "../components/Toast.jsx";
+import { API } from "../services/api.js";
+import { amenityIcon, GRADIENTS } from "../components/hotels/HotelCard.jsx";
+import BookingModal from "../components/common/BookingModal.jsx";
+import Spinner from "../components/common/Spinner.jsx";
+import PageHelmet from "../components/common/PageHelmet.jsx";
+import { useToast } from "../components/common/Toast.jsx";
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
 

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API } from "../api.js";
-import Spinner from "../components/Spinner.jsx";
-import PageHelmet from "../components/PageHelmet.jsx";
-import { useToast } from "../components/Toast.jsx";
+import { API } from "../services/api.js";
+import Spinner from "../components/common/Spinner.jsx";
+import PageHelmet from "../components/common/PageHelmet.jsx";
+import { useToast } from "../components/common/Toast.jsx";
 
 export default function MyBookings() {
   const navigate = useNavigate();

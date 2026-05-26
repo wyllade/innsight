@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Calendar } from "lucide-react";
-import { API } from "../api.js";
-import HotelCard from "../components/HotelCard.jsx";
-import Spinner from "../components/Spinner.jsx";
-import PageHelmet from "../components/PageHelmet.jsx";
-import { amenityIcon } from "../components/HotelCard.jsx";
+import { API } from "../services/api.js";
+import HotelCard from "../components/hotels/HotelCard.jsx";
+import Spinner from "../components/common/Spinner.jsx";
+import PageHelmet from "../components/common/PageHelmet.jsx";
+import { amenityIcon } from "../components/hotels/HotelCard.jsx";
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
 

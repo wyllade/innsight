@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { SearchX } from "lucide-react";
-import PageHelmet from "../components/PageHelmet.jsx";
+import PageHelmet from "../components/common/PageHelmet.jsx";
 
 export default function NotFound() {
   const navigate = useNavigate();
