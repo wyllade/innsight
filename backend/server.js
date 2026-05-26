@@ -7,12 +7,11 @@ const bookingsRouter = require("./routes/bookings");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ── Middleware ──────────────────────────────────────────────
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(requestLogger);
 
-// ── Routes ──────────────────────────────────────────────────
+
 app.get("/", (req, res) => {
   res.json({
     name: "Innsight API",
@@ -37,11 +36,10 @@ app.get("/", (req, res) => {
 app.use("/api/hotels", hotelsRouter);
 app.use("/api/bookings", bookingsRouter);
 
-// ── Error handling ──────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);
 
-// ── Start ───────────────────────────────────────────────────
+
 app.listen(PORT, () => {
   console.log(`\n🏨  Innsight API running at http://localhost:${PORT}`);
   console.log(`📖  Docs: http://localhost:${PORT}/\n`);
