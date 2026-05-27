@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models.hotel import Hotel
@@ -90,17 +91,25 @@ def get_single_hotel(id):
 @hotel_bp.route("/<id>/rooms", methods=["GET"])
 def get_hotel_rooms(id):
     hotel = Hotel.query.get_or_404(id)
-    return jsonify(hotel.to_dict()["rooms"]), 200
+    return jsonify({"rooms": hotel.to_dict()["rooms"]}), 200
 
 
 @hotel_bp.route("/<id>/reviews", methods=["GET"])
 def get_hotel_reviews(id):
-    return jsonify([]), 200
+    return jsonify({"reviews": []}), 200
 
 
 @hotel_bp.route("/<id>/reviews", methods=["POST"])
 def add_hotel_review(id):
-    return jsonify({"message": "Review added"}), 201
+    data = request.get_json()
+    return jsonify({"review": {
+        "id": f"r{datetime.utcnow().strftime('%y%m%d%H%M%S')}",
+        "hotelId": id,
+        "author": data.get("author", "Anonymous"),
+        "rating": data.get("rating", 5),
+        "text": data.get("text", ""),
+        "date": datetime.utcnow().strftime("%Y-%m-%d"),
+    }}), 201
 
 
 @hotel_bp.route("/<id>/availability", methods=["GET"])
