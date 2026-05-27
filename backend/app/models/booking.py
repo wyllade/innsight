@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from app.extensions import db
 
+
 class Booking(db.Model):
     id = db.Column(db.String(20), primary_key=True)
     hotel_id = db.Column(db.String(10), db.ForeignKey("hotel.id"), nullable=False)
