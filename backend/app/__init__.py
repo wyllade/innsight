@@ -31,6 +31,9 @@ def create_app():
     app.register_blueprint(search_bp, url_prefix="/api/search")
     app.register_blueprint(bookings_bp, url_prefix="/api/bookings")
 
+    with app.app_context():
+        db.create_all()
+
     @app.route("/")
     def home():
         return {"message": "Innsight API running"}
