@@ -1,17 +1,7 @@
 import os
 
+class Settings:
+    PROJECT_NAME: str = "INNSIGHT API"
+    DATABASE_URL: str = "sqlite:///./instance/app.db"
 
-class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
-
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "sqlite:///app.db"
-    )
-
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret-key")
-
-    AMADEUS_API_KEY = os.getenv("AMADEUS_API_KEY", "YOUR_KEY")
-    AMADEUS_API_SECRET = os.getenv("AMADEUS_API_SECRET", "YOUR_SECRET")
+settings = Settings()
