@@ -1,19 +1,36 @@
 import json
 import uvicorn
+import jwt
+from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from passlib.context import CryptContext
 
 from app.database import Base, engine, get_db
 from app.models.hotel import Hotel
 from app.models.booking import Booking
+from app.models.user import User
+
+SECRET_KEY = "super-secret-key-change-in-production"
+ALGORITHM = "HS256"
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 class BookingCreate(BaseModel):
     hotel_id: int
-    user_email: str
     checkin_date: str
     checkout_date: str
     total_price: float
@@ -76,6 +93,46 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def get_current_user_email(token: Optional[str] = Depends(oauth2_scheme)):
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        return email
+    except jwt.PyJWTError:
+        return None
+
+@app.post("/api/auth/register")
+def register(payload: UserRegister, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == payload.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed_password = pwd_context.hash(payload.password)
+    new_user = User(email=payload.email, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    return {"message": "User registered successfully"}
+
+@app.post("/api/auth/login")
+def login(payload: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or not pwd_context.verify(payload.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    token_expiry = datetime.utcnow() + timedelta(days=1)
+    token_data = {"sub": user.email, "exp": token_expiry}
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {"email": user.email}
+    }
 
 @app.get("/api/hotels")
 def get_hotels(
@@ -157,14 +214,23 @@ def get_hotel(hotel_id: int, db: Session = Depends(get_db)):
     }
 
 @app.post("/api/bookings")
-def create_booking(payload: BookingCreate, db: Session = Depends(get_db)):
+def create_booking(
+    payload: BookingCreate, 
+    db: Session = Depends(get_db),
+    current_user_email: Optional[str] = Depends(get_current_user_email),
+    fallback_email: Optional[str] = Query(None)
+):
+    email_to_link = current_user_email or fallback_email
+    if not email_to_link:
+        raise HTTPException(status_code=401, detail="Authentication required or fallback email must be provided")
+
     hotel = db.query(Hotel).filter(Hotel.id == payload.hotel_id).first()
     if not hotel:
         raise HTTPException(status_code=404, detail="Hotel not found")
     
     booking_obj = Booking(
         hotel_id=payload.hotel_id,
-        user_email=payload.user_email,
+        user_email=email_to_link,
         checkin_date=payload.checkin_date,
         checkout_date=payload.checkout_date,
         total_price=payload.total_price
@@ -185,12 +251,16 @@ def create_booking(payload: BookingCreate, db: Session = Depends(get_db)):
     }
 
 @app.get("/api/bookings")
-def get_bookings(user_email: Optional[str] = Query(None), db: Session = Depends(get_db)):
-    query = db.query(Booking)
-    if user_email:
-        query = query.filter(Booking.user_email == user_email)
-    
-    bookings = query.all()
+def get_bookings(
+    db: Session = Depends(get_db),
+    current_user_email: Optional[str] = Depends(get_current_user_email),
+    fallback_email: Optional[str] = Query(None)
+):
+    email_to_query = current_user_email or fallback_email
+    if not email_to_query:
+        raise HTTPException(status_code=401, detail="Authentication required or fallback email query parameter missing")
+
+    bookings = db.query(Booking).filter(Booking.user_email == email_to_query).all()
     output_data = []
     for b in bookings:
         hotel = db.query(Hotel).filter(Hotel.id == b.hotel_id).first()
