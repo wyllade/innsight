@@ -1,15 +1,24 @@
+<<<<<<< HEAD
 try:
  from flask import Flask
 except ImportError:
     raise ImportError("Flask is not installed. Install it using 'pip install flask'")
+=======
+from flask import Flask, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+>>>>>>> 58fbc37 (feat: prepare base for Amadeus hotel API integration and cleanup local hotel dependency)
 
 from .config import Config
 from .extensions import db, migrate, jwt, cors
 
 from .routes.auth import auth_bp
 from .routes.hotel import hotel_bp
+<<<<<<< HEAD
 from .routes.search import search_bp
 from .routes.bookings import bookings_bp
+=======
+from .routes.booking import booking_bp
+>>>>>>> 58fbc37 (feat: prepare base for Amadeus hotel API integration and cleanup local hotel dependency)
 
 from .models.user import User
 from .models.hotel import Hotel
@@ -38,5 +47,17 @@ def create_app():
     @app.route("/")
     def home():
         return {"message": "Innsight API running"}
+
+    @app.route("/api/profile")
+    @jwt_required()
+    def profile():
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        return jsonify({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        })
 
     return app
