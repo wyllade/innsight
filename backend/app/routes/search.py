@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify
-from app.services.amadeus import search_hotels_by_city
+from app.services.hotels import search_hotels_by_city
 
 search_bp = Blueprint("search", __name__)
-
 
 @search_bp.route("/hotels", methods=["GET"])
 def search_hotels():
@@ -13,16 +12,7 @@ def search_hotels():
 
     hotels = search_hotels_by_city(city)
 
-    result = [
-        {
-            "name": h.get("name"),
-            "chainCode": h.get("chainCode"),
-            "iataCode": h.get("iataCode")
-        }
-        for h in hotels
-    ]
-
     return jsonify({
         "city": city,
-        "results": result
+        "results": hotels
     })
