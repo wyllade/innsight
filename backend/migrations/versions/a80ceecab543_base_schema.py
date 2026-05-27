@@ -1,8 +1,8 @@
-"""fresh schema reset
+"""base schema
 
-Revision ID: 124eac906726
+Revision ID: a80ceecab543
 Revises: 
-Create Date: 2026-05-27 20:25:56.104828
+Create Date: 2026-05-27 20:46:01.517179
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '124eac906726'
+revision = 'a80ceecab543'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -38,9 +38,9 @@ def upgrade():
     op.create_table('booking',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('hotel_id', sa.Integer(), nullable=False),
+    sa.Column('hotel_name', sa.String(length=200), nullable=False),
     sa.Column('city', sa.String(length=120), nullable=False),
-    sa.Column('hotel_name', sa.String(length=120), nullable=False),
+    sa.Column('external_hotel_id', sa.String(length=120), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
