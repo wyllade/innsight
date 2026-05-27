@@ -11,4 +11,8 @@ def create_app():
     jwt.init_app(app)
     cors.init_app(app)
 
+    @app.route("/")
+    def home():
+        return {"message": "Innsight API running with database layer"}
+
     return app
