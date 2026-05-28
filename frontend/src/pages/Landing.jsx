@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { API } from "../services/api.js";
 import Spinner from "../components/common/Spinner.jsx";
 import PageHelmet from "../components/common/PageHelmet.jsx";
