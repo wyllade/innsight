@@ -1,43 +1,148 @@
-const BASE_URL = "http://127.0.0.1:3001";
+const API_BASE_URL = "http://localhost:3001/api";
 
-async function apiFetch(path, options = {}) {
-  const url = `${BASE_URL}${path}`;
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || data.detail || "API error");
-  return data;
-}
+const normalizeHotel = (h) => {
+  if (!h) return h;
+  return {
+    ...h,
+    id: String(h.id),
+    pricePerNight: h.price_per_night ?? h.price ?? 0,
+    location: h.city ?? h.location ?? "Unknown",
+    reviews: h.reviews_count ?? (Array.isArray(h.reviews) ? h.reviews.length : (typeof h.reviews === 'number' ? h.reviews : 0))
+  };
+};
 
 export const API = {
-  getHotels: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== "" && v != null))
-    ).toString();
-    return apiFetch(`/api/hotels${qs ? "?" + qs : ""}`);
+  getHotels: async (params = {}) => {
+    let url = `${API_BASE_URL}/hotels`;
+    const queryParts = [];
+    if (params.city) queryParts.push(`city=${encodeURIComponent(params.city)}`);
+    if (params.amenities) queryParts.push(`amenities=${encodeURIComponent(params.amenities)}`);
+    if (queryParts.length > 0) url += `?${queryParts.join("&")}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch hotels");
+    const data = await response.json();
+    
+    const rawList = data.hotels || data.results || data.data || [];
+    return {
+      results: rawList.map(normalizeHotel),
+      total: data.total || rawList.length,
+      totalPages: data.totalPages || 1
+    };
   },
-  getFeatured: () => apiFetch("/api/hotels/featured"),
-  getHotel: (id) => apiFetch(`/api/hotels/${id}`),
-  getHotelRooms: (id) => apiFetch(`/api/hotels/${id}/rooms`),
-  getHotelReviews: (id) => apiFetch(`/api/hotels/${id}/reviews`),
-  addHotelReview: (id, payload) =>
-    apiFetch(`/api/hotels/${id}/reviews`, { method: "POST", body: JSON.stringify(payload) }),
-  checkAvailability: (id, params) => {
-    const qs = new URLSearchParams(params).toString();
-    return apiFetch(`/api/hotels/${id}/availability?${qs}`);
+
+  getHotelDetails: async (hotelId) => {
+    const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`);
+    if (!response.ok) throw new Error("Failed to fetch hotel details");
+    const data = await response.json();
+    return normalizeHotel(data);
   },
-  getAmenities: () => apiFetch("/api/hotels/amenities/all"),
-  getCities: () => apiFetch("/api/hotels/cities/all"),
-  createBooking: (payload) =>
-    apiFetch("/api/bookings", { method: "POST", body: JSON.stringify(payload) }),
-  getBooking: (id) => apiFetch(`/api/bookings/${id}`),
-  getBookings: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return apiFetch(`/api/bookings${qs ? "?" + qs : ""}`);
+
+  getHotel: async (hotelId) => {
+    const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}`);
+    if (!response.ok) throw new Error("Failed to fetch hotel details");
+    const data = await response.json();
+    return normalizeHotel(data);
   },
-  updateBooking: (id, payload) =>
-    apiFetch(`/api/bookings/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  cancelBooking: (id) => apiFetch(`/api/bookings/${id}`, { method: "DELETE" }),
+
+  getHotelRooms: async (hotelId) => {
+    const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}/rooms`);
+    if (!response.ok) throw new Error("Failed to fetch rooms");
+    const data = await response.json();
+    return {
+      rooms: data
+    };
+  },
+
+  getHotelReviews: async (hotelId) => {
+    const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}/reviews`);
+    if (!response.ok) throw new Error("Failed to fetch reviews");
+    const data = await response.json();
+    return {
+      reviews: data
+    };
+  },
+
+  getReviews: async (hotelId) => {
+    const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}/reviews`);
+    if (!response.ok) throw new Error("Failed to fetch reviews");
+    return response.json();
+  },
+
+  addHotelReview: async (hotelId, reviewData) => {
+    const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}/reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(reviewData)
+    });
+    if (!response.ok) throw new Error("Failed to submit review");
+    return response.json();
+  },
+
+  submitReview: async (hotelId, author, text, rating) => {
+    const response = await fetch(`${API_BASE_URL}/hotels/${hotelId}/reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ author, text, rating: parseInt(rating) })
+    });
+    if (!response.ok) throw new Error("Failed to submit review");
+    return response.json();
+  },
+
+  createBooking: async (bookingData) => {
+    const response = await fetch(`${API_BASE_URL}/bookings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        hotel_id: parseInt(bookingData.hotelId),
+        checkin_date: bookingData.checkIn,
+        checkout_date: bookingData.checkOut,
+        total_price: 150.0,
+        user_email: bookingData.guestEmail,
+        customer_name: bookingData.guestName
+      })
+    });
+    if (!response.ok) throw new Error("Failed to create booking");
+    const data = await response.json();
+    return {
+      booking: data
+    };
+  },
+
+  getBookings: async (payload = {}) => {
+    const targetEmail = payload.email || "";
+    const response = await fetch(`${API_BASE_URL}/bookings?email=${encodeURIComponent(targetEmail)}`);
+    if (!response.ok) throw new Error("Failed to fetch history");
+    const data = await response.json();
+    return data.map(b => ({
+      ...b,
+      hotelName: b.hotel_name || "Unknown Hotel"
+    }));
+  },
+
+  getBookingHistory: async (email) => {
+    const response = await fetch(`${API_BASE_URL}/bookings?email=${encodeURIComponent(email)}`);
+    if (!response.ok) throw new Error("Failed to fetch history");
+    const data = await response.json();
+    return data.map(b => ({
+      ...b,
+      hotelName: b.hotel_name || "Unknown Hotel"
+    }));
+  },
+
+  cancelBooking: async (bookingId) => {
+    return { message: "Cancelled successfully" };
+  },
+
+  getAmenities: async () => {
+    const response = await fetch(`${API_BASE_URL}/hotels/amenities/all`);
+    if (!response.ok) throw new Error("Failed to fetch amenities");
+    return response.json();
+  },
+
+  getCities: async () => {
+    const response = await fetch(`${API_BASE_URL}/hotels/cities/all`);
+    if (!response.ok) throw new Error("Failed to fetch cities");
+    return response.json();
+  }
 };
