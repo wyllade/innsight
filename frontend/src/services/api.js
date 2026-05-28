@@ -1,5 +1,6 @@
-const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
-const API_BASE_URL = BASE_URL + "/api";
+const API_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : ((import.meta.env.VITE_API_URL || "") + "/api");
 
 const normalizeHotel = (h) => {
   if (!h) return h;
