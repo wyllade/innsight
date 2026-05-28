@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import { API } from "../services/api.js";
@@ -28,7 +28,9 @@ export default function Results() {
   const typeParam = searchParams.get("type") || "";
   const checkin = searchParams.get("checkin") || "";
   const checkout = searchParams.get("checkout") || "";
-  const selectedAmenities = searchParams.get("amenities")?.split(",").filter(Boolean) || [];
+  const selectedAmenities = useMemo(() => {
+    return searchParams.get("amenities")?.split(",").filter(Boolean) || [];
+  }, [searchParams]);
   const page = parseInt(searchParams.get("page")) || 1;
 
   useEffect(() => {
@@ -76,10 +78,11 @@ export default function Results() {
     } finally {
       setLoading(false);
     }
-  }, [city, q, sort, maxPrice, stars, typeParam, selectedAmenities.join(","), checkin, checkout, page, maxPriceLimit]);
+  }, [city, q, sort, maxPrice, stars, typeParam, selectedAmenities, checkin, checkout, page, maxPriceLimit]);
 
   useEffect(() => {
-    fetchHotels();
+    const id = setTimeout(() => fetchHotels(), 0);
+    return () => clearTimeout(id);
   }, [fetchHotels]);
 
   function updateParam(key, value) {
