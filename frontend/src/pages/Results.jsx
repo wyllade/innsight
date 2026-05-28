@@ -5,7 +5,7 @@ import { API } from "../services/api.js";
 import HotelCard from "../components/hotels/HotelCard.jsx";
 import Spinner from "../components/common/Spinner.jsx";
 import PageHelmet from "../components/common/PageHelmet.jsx";
-import { amenityIcon } from "../components/hotels/HotelCard.jsx";
+import { amenityIcon } from "../components/hotels/hotelUtils";
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
 

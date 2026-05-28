@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Hotel, Clock, PawPrint, Ban, CreditCard, FileText, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { API } from "../services/api.js";
-import { amenityIcon, GRADIENTS } from "../components/hotels/HotelCard.jsx";
+import { amenityIcon, GRADIENTS } from "../components/hotels/hotelUtils";
 import BookingModal from "../components/common/BookingModal.jsx";
 import Spinner from "../components/common/Spinner.jsx";
 import PageHelmet from "../components/common/PageHelmet.jsx";

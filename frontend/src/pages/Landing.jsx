@@ -4,7 +4,7 @@ import { MapPin, ArrowRight } from "lucide-react";
 import { API } from "../services/api.js";
 import Spinner from "../components/common/Spinner.jsx";
 import PageHelmet from "../components/common/PageHelmet.jsx";
-import { amenityIcon } from "../components/hotels/HotelCard.jsx";
+import { amenityIcon } from "../components/hotels/hotelUtils";
 
 export default function Landing() {
   const navigate = useNavigate();
