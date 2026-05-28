@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const BASE_URL = "http://127.0.0.1:3001";
 
 async function apiFetch(path, options = {}) {
   const url = `${BASE_URL}${path}`;
