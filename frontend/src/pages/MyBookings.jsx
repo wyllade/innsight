@@ -26,7 +26,7 @@ export default function MyBookings() {
     try {
       const data = await API.getBookings({ email: email.trim() });
       setBookings(Array.isArray(data) ? data : []);
-    } catch (e) {
+    } catch {
       showToast("Failed to load bookings");
       setBookings([]);
     } finally {
@@ -45,7 +45,7 @@ export default function MyBookings() {
         )
       );
       showToast("Booking cancelled");
-    } catch (e) {
+    } catch {
       showToast("Failed to cancel booking");
     }
   }
