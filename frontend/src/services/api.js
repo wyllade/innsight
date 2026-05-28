@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:3001/api";
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const API_BASE_URL = BASE_URL + "/api";
 
 const normalizeHotel = (h) => {
   if (!h) return h;
