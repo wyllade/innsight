@@ -6,7 +6,7 @@ import { amenityIcon, GRADIENTS } from "../components/hotels/hotelUtils";
 import BookingModal from "../components/common/BookingModal.jsx";
 import Spinner from "../components/common/Spinner.jsx";
 import PageHelmet from "../components/common/PageHelmet.jsx";
-import { useToast } from "../components/common/Toast.jsx";
+import { useToast } from "../hooks/useToast";
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://innsight.app";
 

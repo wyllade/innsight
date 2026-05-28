@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { API } from "../services/api.js";
 import Spinner from "../components/common/Spinner.jsx";
 import PageHelmet from "../components/common/PageHelmet.jsx";
-import { useToast } from "../components/common/Toast.jsx";
+import { useToast } from "../hooks/useToast";
 
 export default function MyBookings() {
   const navigate = useNavigate();
