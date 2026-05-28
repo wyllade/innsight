@@ -12,7 +12,7 @@ class Hotel(Base):
     price_per_night = Column(Float, nullable=False)
     image_url = Column(String, nullable=True)
     rating = Column(Float, default=4.5)
-    _amenities = Column("amenities", Text, default="[]") 
+    _amenities = Column("amenities", Text, default="[]")
 
     @property
     def amenities(self):

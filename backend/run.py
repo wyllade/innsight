@@ -4,52 +4,39 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine, get_db
 from app.models.hotel import Hotel
-from app.routes import hotels, bookings, auth
+from app.models.booking import Booking
+from app.models.review import Review
+from app.routes import auth, hotels, bookings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     db = next(get_db())
     if db.query(Hotel).count() == 0:
-        sample_hotels = [
-            {
-                "name": "The Grand Oasis Resort",
-                "city": "Nairobi",
-                "description": "Luxurious stay with breathtaking views of the skyline and an incredible rooftop swimming pool.",
-                "price_per_night": 150.0,
-                "image_url": "https://unsplash.com",
-                "rating": 4.8,
-                "amenities": ["Swimming Pool", "Free WiFi", "Gym", "Breakfast", "Spa"]
-            },
-            {
-                "name": "Urban Edge Boutique Hotel",
-                "city": "Mombasa",
-                "description": "Modern minimalism right next to the shorelines. Perfect for remote workers and travelers.",
-                "price_per_night": 95.0,
-                "image_url": "https://unsplash.com",
-                "rating": 4.5,
-                "amenities": ["Free WiFi", "Gym", "Restaurant", "Bar", "Parking"]
-            },
-            {
-                "name": "Savannah Eco Lodge",
-                "city": "Nanyuki",
-                "description": "Unplug from the world and connect with nature in this highly sustainable eco lodge.",
-                "price_per_night": 210.0,
-                "image_url": "https://unsplash.com",
-                "rating": 4.9,
-                "amenities": ["Breakfast", "Parking", "Restaurant", "Swimming Pool"]
-            }
+        cities = ["Nairobi", "Mombasa", "Kisumu", "Nakuru"]
+        hotel_names = ["Grand Oasis", "Urban Edge", "Savannah Lodge", "Hilton View", "Coral Reef", "Rift Valley Pavilions", "Serene Palms", "The Horizon", "Sunset Bay", "Peak View", "Lakeside Retreat", "The Sovereign"]
+        amenity_presets = [
+            ["Swimming Pool", "Free WiFi", "Gym", "Breakfast", "Spa"],
+            ["Free WiFi", "Gym", "Restaurant", "Bar", "Parking"],
+            ["Breakfast", "Parking", "Restaurant", "Swimming Pool"],
+            ["Free WiFi", "Gym", "Breakfast", "Restaurant"],
+            ["Swimming Pool", "Free WiFi", "Spa", "Bar"],
+            ["Swimming Pool", "Free WiFi", "Breakfast", "Gym"]
         ]
-        for h in sample_hotels:
+        for i in range(12):
+            city = cities[i % len(cities)]
+            name = f"{hotel_names[i]} Resort"
+            price = 80.0 + (i * 15)
+            rating = round(4.2 + (i * 0.06) % 0.8, 1)
             hotel_obj = Hotel(
-                name=h["name"],
-                city=h["city"],
-                description=h["description"],
-                price_per_night=h["price_per_night"],
-                image_url=h["image_url"],
-                rating=h["rating"]
+                name=name,
+                city=city,
+                description=f"Welcome to {name} in beautiful {city}. Experience premier luxury, exceptional local dining, and top-tier amenities designed for ultimate comfort.",
+                price_per_night=price,
+                image_url="",
+                rating=rating
             )
-            hotel_obj.amenities = h["amenities"]
+            hotel_obj.amenities = amenity_presets[i % len(amenity_presets)]
             db.add(hotel_obj)
         db.commit()
     db.close()
