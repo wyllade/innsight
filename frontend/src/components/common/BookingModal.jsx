@@ -1,4 +1,4 @@
-import React from "react";
+// React import not required with new JSX transform
 
 export default function BookingModal({ booking, onClose }) {
   if (!booking) return null;
