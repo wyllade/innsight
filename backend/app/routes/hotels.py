@@ -1,106 +1,142 @@
-import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from datetime import datetime
 from typing import Optional
 from app.database import get_db
 from app.models.hotel import Hotel
 
 router = APIRouter(prefix="/api/hotels", tags=["Hotels"])
 
+
+def _find_by_public_id(db: Session, public_id: str):
+    hotel = db.query(Hotel).filter(Hotel.public_id == public_id).first()
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+    return hotel
+
+
 @router.get("")
 def get_hotels(
     city: Optional[str] = None,
+    q: Optional[str] = None,
     amenities: Optional[str] = None,
-    page: int = 1,
-    limit: int = 20,
-    sort: Optional[str] = None,
+    minPrice: Optional[float] = None,
+    maxPrice: Optional[float] = None,
+    stars: Optional[int] = None,
     type: Optional[str] = None,
-    db: Session = Depends(get_db)
+    sort: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
 ):
     query = db.query(Hotel)
+
     if city:
         query = query.filter(Hotel.city.ilike(f"%{city}%"))
-    hotels = query.all()
+    if q:
+        query = query.filter(
+            Hotel.name.ilike(f"%{q}%") | Hotel.description.ilike(f"%{q}%")
+        )
+    if minPrice is not None:
+        query = query.filter(Hotel.price_per_night >= minPrice)
+    if maxPrice is not None:
+        query = query.filter(Hotel.price_per_night <= maxPrice)
+    if stars is not None:
+        query = query.filter(Hotel.stars >= stars)
+    if type:
+        types = [t.strip() for t in type.split(",")]
+        query = query.filter(Hotel.hotel_type.in_(types))
+
+    # Amenities filter (Python-side)
     if amenities:
-        target_amenities = [a.strip() for a in amenities.split(",") if a.strip()]
-        filtered_hotels = []
-        for h in hotels:
-            if all(amenity in h.amenities for amenity in target_amenities):
-                filtered_hotels.append(h)
-        hotels = filtered_hotels
-    output_data = [{
-        "id": h.id,
-        "name": h.name,
-        "city": h.city,
-        "description": h.description,
-        "price_per_night": h.price_per_night,
-        "price": h.price_per_night,
-        "image_url": h.image_url,
-        "rating": h.rating,
-        "amenities": h.amenities,
-        "reviews_count": 12
-    } for h in hotels]
+        wanted = [a.strip().lower() for a in amenities.split(",")]
+        all_h = query.all()
+        filtered = []
+        for h in all_h:
+            h_amenities = [a.lower() for a in h.amenities]
+            if any(a in h_amenities for a in wanted):
+                filtered.append(h)
+        hotel_ids = [h.id for h in filtered]
+        query = db.query(Hotel).filter(Hotel.id.in_(hotel_ids))
+
+    # Sorting
+    if sort == "price_asc":
+        query = query.order_by(Hotel.price_per_night.asc())
+    elif sort == "price_desc":
+        query = query.order_by(Hotel.price_per_night.desc())
+    elif sort == "rating":
+        query = query.order_by(Hotel.rating.desc())
+    elif sort == "reviews":
+        query = query.order_by(Hotel.reviews_count.desc())
+
+    total = query.count()
+    total_pages = (total + limit - 1) // limit
+    hotels = query.offset((page - 1) * limit).limit(limit).all()
+
     return {
-        "total": len(output_data),
-        "data": output_data,
-        "hotels": output_data
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "totalPages": total_pages,
+        "results": [h.to_dict() for h in hotels],
     }
 
+
 @router.get("/featured")
-def get_featured_hotels(db: Session = Depends(get_db)):
-    hotels = db.query(Hotel).filter(Hotel.rating >= 4.7).all()
-    return [{
-        "id": h.id,
-        "name": h.name,
-        "city": h.city,
-        "description": h.description,
-        "price_per_night": h.price_per_night,
-        "price": h.price_per_night,
-        "image_url": h.image_url,
-        "rating": h.rating,
-        "amenities": h.amenities
-    } for h in hotels]
+def get_featured(db: Session = Depends(get_db)):
+    hotels = db.query(Hotel).order_by(Hotel.rating.desc()).limit(6).all()
+    return [h.to_dict() for h in hotels]
+
 
 @router.get("/amenities/all")
 def get_all_amenities(db: Session = Depends(get_db)):
     hotels = db.query(Hotel).all()
-    amenities_set = set()
+    all_set = set()
     for h in hotels:
-        amenities_set.update(h.amenities)
-    return list(amenities_set)
+        all_set.update(h.amenities)
+    return sorted(all_set)
+
 
 @router.get("/cities/all")
 def get_all_cities(db: Session = Depends(get_db)):
     results = db.query(Hotel.city).distinct().all()
-    return [r[0] for r in results]
+    return sorted([r[0] for r in results if r[0]])
 
-@router.get("/{hotel_id}")
-def get_hotel(hotel_id: int, db: Session = Depends(get_db)):
-    h = db.query(Hotel).filter(Hotel.id == hotel_id).first()
-    if not h:
-        raise HTTPException(status_code=404, detail="Hotel not found")
+
+@router.get("/{public_id}")
+def get_hotel(public_id: str, db: Session = Depends(get_db)):
+    hotel = _find_by_public_id(db, public_id)
+    return hotel.to_dict()
+
+
+@router.get("/{public_id}/rooms")
+def get_hotel_rooms(public_id: str, db: Session = Depends(get_db)):
+    hotel = _find_by_public_id(db, public_id)
+    return {"rooms": hotel.rooms}
+
+
+@router.get("/{public_id}/reviews")
+def get_hotel_reviews(public_id: str):
+    return {"reviews": []}
+
+
+@router.post("/{public_id}/reviews")
+def add_hotel_review(public_id: str, body: dict, db: Session = Depends(get_db)):
+    _find_by_public_id(db, public_id)
     return {
-        "id": h.id,
-        "name": h.name,
-        "city": h.city,
-        "description": h.description,
-        "price_per_night": h.price_per_night,
-        "price": h.price_per_night,
-        "image_url": h.image_url,
-        "rating": h.rating,
-        "amenities": h.amenities
+        "review": {
+            "id": f"r{datetime.utcnow().strftime('%y%m%d%H%M%S')}",
+            "hotelId": public_id,
+            "author": body.get("author", "Anonymous"),
+            "rating": body.get("rating", 5),
+            "text": body.get("text", ""),
+            "date": datetime.utcnow().strftime("%Y-%m-%d"),
+        }
     }
 
-@router.get("/{hotel_id}/rooms")
-def get_hotel_rooms(hotel_id: int):
-    return [
-        {"id": 101, "name": "Deluxe King Room", "price": 120.0, "capacity": 2},
-        {"id": 102, "name": "Executive Suite", "price": 200.0, "capacity": 4}
-    ]
 
-@router.get("/{hotel_id}/reviews")
-def get_hotel_reviews(hotel_id: int):
-    return [
-        {"id": 1, "author": "John Doe", "text": "Incredible stay!", "rating": 5},
-        {"id": 2, "author": "Jane Smith", "text": "Very clean and spacious rooms.", "rating": 4}
-    ]
+@router.get("/{public_id}/availability")
+def check_availability(public_id: str, db: Session = Depends(get_db)):
+    hotel = _find_by_public_id(db, public_id)
+    return {"available": True, "rooms": hotel.rooms}
